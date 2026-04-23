@@ -1,0 +1,27 @@
+# 원본 백업 (분리 전 단일 HTML)
+index.backup.html
+
+# OS / 에디터
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+.vscode/
+.idea/
+
+# 로그
+*.log
+npm-debug.log*
+
+# Node (향후 빌드 툴 도입 시)
+node_modules/
+
+# Firebase CLI
+.firebase/
+firebase-debug.log
+firebase-debug.*.log
+
+# 로컬 환경 변수 (혹시 .env를 쓸 경우)
+.env
+.env.local
+.env.*.local

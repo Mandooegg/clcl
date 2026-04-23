@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="SITE-MASTER">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#0a0e17">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://www.gstatic.com https://*.firebaseio.com https://*.googleapis.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob:; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com https://*.cloudfunctions.net wss://*.firebaseio.com; frame-src 'self' https://*.firebaseapp.com;">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'%3E%3Cellipse cx='100' cy='130' rx='50' ry='55' fill='%233b82f6'/%3E%3Cpath d='M56 80 Q58 58 100 54 Q142 58 144 80 Z' fill='%23f59e0b'/%3E%3Crect x='50' y='76' width='100' height='10' rx='5' fill='%23eab308'/%3E%3C/svg%3E">
+<link rel="manifest" href="data:application/manifest+json;charset=utf-8,%7B%22name%22%3A%22SITE-MASTER%22%2C%22short_name%22%3A%22SITE-MASTER%22%2C%22start_url%22%3A%22.%2F%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%230a0e17%22%2C%22theme_color%22%3A%22%230a0e17%22%2C%22lang%22%3A%22ko%22%7D">
+<title>SITE-MASTER</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="tc" id="TC"></div>
+
+<!-- ===== 로그인 화면 ===== -->
+<div id="LP">
+<div class="lc">
+<div style="text-align:center;margin-bottom:12px">
+<svg width="120" height="120" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+<ellipse cx="100" cy="188" rx="40" ry="7" fill="#1e293b" opacity=".35">
+<animate attributeName="rx" values="40;36;40" dur="2s" repeatCount="indefinite"/>
+</ellipse>
+<ellipse cx="78" cy="176" rx="14" ry="8" fill="#3b82f6"/>
+<ellipse cx="122" cy="176" rx="14" ry="8" fill="#3b82f6"/>
+<ellipse cx="78" cy="175" rx="12" ry="6" fill="#60a5fa"/>
+<ellipse cx="122" cy="175" rx="12" ry="6" fill="#60a5fa"/>
+<ellipse cx="100" cy="130" rx="50" ry="55" fill="#3b82f6"/>
+<ellipse cx="100" cy="128" rx="46" ry="50" fill="#60a5fa"/>
+<ellipse cx="82" cy="110" rx="12" ry="20" fill="#93c5fd" opacity=".25" transform="rotate(-15 82 110)"/>
+<ellipse cx="46" cy="135" rx="14" ry="10" fill="#60a5fa" transform="rotate(15 46 135)"/>
+<g style="transform-origin:154px 130px;animation:blobWave 1.8s ease-in-out infinite">
+<ellipse cx="154" cy="130" rx="14" ry="10" fill="#60a5fa" transform="rotate(-15 154 130)"/>
+</g>
+<ellipse cx="100" cy="82" rx="46" ry="10" fill="#f59e0b" opacity=".25"/>
+<path d="M56 80 Q58 58 100 54 Q142 58 144 80 Z" fill="#f59e0b"/>
+<rect x="50" y="76" width="100" height="10" rx="5" fill="#eab308"/>
+<rect x="82" y="46" width="36" height="14" rx="5" fill="#fbbf24"/>
+<circle cx="100" cy="50" r="4.5" fill="#fef3c7">
+<animate attributeName="opacity" values="1;.5;1" dur="2s" repeatCount="indefinite"/>
+</circle>
+<g class="blob-eyes">
+<ellipse cx="80" cy="115" rx="12" ry="14" fill="#0f172a"/>
+<ellipse cx="120" cy="115" rx="12" ry="14" fill="#0f172a"/>
+<ellipse cx="82" cy="116" rx="8" ry="10" fill="#1e40af"/>
+<ellipse cx="122" cy="116" rx="8" ry="10" fill="#1e40af"/>
+<circle cx="84" cy="114" r="4" fill="#0f172a"/>
+<circle cx="124" cy="114" r="4" fill="#0f172a"/>
+<circle cx="86" cy="110" r="4.5" fill="#fff"/>
+<circle cx="126" cy="110" r="4.5" fill="#fff"/>
+<circle cx="78" cy="118" r="2.5" fill="#fff" opacity=".6"/>
+<circle cx="118" cy="118" r="2.5" fill="#fff" opacity=".6"/>
+<circle cx="89" cy="107" r="1.5" fill="#fff" opacity=".8"/>
+<circle cx="129" cy="107" r="1.5" fill="#fff" opacity=".8"/>
+</g>
+<ellipse cx="64" cy="132" rx="10" ry="7" fill="#818cf8" opacity=".3"/>
+<ellipse cx="136" cy="132" rx="10" ry="7" fill="#818cf8" opacity=".3"/>
+<path d="M90 140 Q100 152 110 140" fill="none" stroke="#1e3a5f" stroke-width="3" stroke-linecap="round"/>
+<g opacity=".7">
+<polygon points="38,70 40,64 42,70 40,72" fill="#fbbf24">
+<animate attributeName="opacity" values="1;.2;1" dur="1.5s" repeatCount="indefinite"/>
+</polygon>
+<polygon points="158,60 160,54 162,60 160,62" fill="#fbbf24">
+<animate attributeName="opacity" values=".3;1;.3" dur="1.2s" repeatCount="indefinite"/>
+</polygon>
+<circle cx="46" cy="55" r="2" fill="#c4b5fd">
+<animate attributeName="opacity" values=".5;1;.5" dur="2s" repeatCount="indefinite"/>
+</circle>
+</g>
+</svg>
+</div>
+<h1>SITE-MASTER</h1><p class="sub">건설현장 관리시스템 v2.3</p><br>
+
+<!-- Mode tabs -->
+<div id="loginTabs" style="display:none;gap:0;margin-bottom:16px;border-radius:var(--rs);overflow:hidden;border:1px solid var(--b1)">
+<button class="ltab active" onclick="switchLoginMode('cloud')" id="tabCloud" style="flex:1;padding:10px;background:rgba(59,130,246,.15);color:var(--blue);border:none;font-family:inherit;font-size:12px;font-weight:600;cursor:pointer">☁️ 클라우드</button>
+<button class="ltab" onclick="switchLoginMode('local')" id="tabLocal" style="flex:1;padding:10px;background:var(--bg1);color:var(--t3);border:none;font-family:inherit;font-size:12px;cursor:pointer">💾 로컬(오프라인)</button>
+</div>
+
+<!-- Cloud login -->
+<div id="loginCloud" style="display:none">
+<div class="fg"><label>이메일</label><input id="loginEmail" type="email" placeholder="name@company.com"></div>
+<div class="fg"><label>비밀번호</label><input type="password" id="loginCloudPw" placeholder="6자 이상"></div>
+<button class="btn bp" onclick="cloudLogin()" style="margin-bottom:8px">로그인</button>
+<div style="display:flex;gap:6px">
+<button class="btn bo" onclick="showSignupForm()" style="flex:1;font-size:12px">회원가입</button>
+<button class="btn bo" onclick="cloudResetPw()" style="flex:1;font-size:12px">비밀번호 찾기</button>
+</div>
+<div id="signupForm" style="display:none;margin-top:12px;padding:14px;background:var(--bg1);border:1px solid var(--b1);border-radius:var(--rs)">
+<div style="font-size:13px;font-weight:700;margin-bottom:10px;color:var(--cyan)">회원가입</div>
+<div class="fg"><label>이름</label><input id="signupName" placeholder="홍길동"></div>
+<div style="display:flex;gap:0;margin-bottom:4px;border-radius:var(--rs);overflow:hidden;border:1px solid var(--b1)">
+<button id="stNew" onclick="switchSignupType('new')" style="flex:1;padding:8px;background:rgba(16,185,129,.15);color:var(--green);border:none;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit">🏢 처음이에요 (새 조직)</button>
+<button id="stJoin" onclick="switchSignupType('join')" style="flex:1;padding:8px;background:var(--bg2);color:var(--t3);border:none;font-size:11px;cursor:pointer;font-family:inherit">🔗 초대받았어요 (코드)</button>
+</div>
+<div id="signupNew"><div style="font-size:10px;color:var(--green);margin-bottom:8px">✓ 새 조직을 만들고 관리자가 됩니다. 코드는 가입 후 자동 생성됩니다.</div><div class="fg"><label>조직명 (회사/현장명)</label><input id="signupOrg" placeholder="(주)대한건설"></div></div>
+<div id="signupJoin" style="display:none"><div style="font-size:10px;color:var(--amber);margin-bottom:8px">✓ 관리자에게 받은 6자리 코드를 입력하세요</div><div class="fg"><label>조직 코드</label><input id="signupOrgCode" placeholder="A3F2K9" maxlength="6" style="text-transform:uppercase;letter-spacing:6px;text-align:center;font-weight:700;font-size:18px"></div></div>
+<div style="display:flex;gap:6px">
+<button class="btn bo" onclick="hideSignupForm()" style="flex:1">취소</button>
+<button class="btn bg" onclick="cloudSignup()" style="flex:1">가입하기</button>
+</div>
+</div>
+<div id="cloudStatus" style="margin-top:10px;font-size:11px;color:var(--t3);text-align:center"></div>
+</div>
+
+<!-- Local login -->
+<div id="loginLocal">
+<div class="fg"><label>아이디</label><input id="loginId" autocomplete="username" placeholder="admin"></div>
+<div class="fg"><label>비밀번호</label><input type="password" id="loginPw" autocomplete="current-password" placeholder="••••"></div>
+<div class="fg"><label>현장 선택</label><select id="loginSite"><option value="all">전체 현장 (관리자)</option><option value="site1">세종시 행복아파트</option><option value="site2">대전 한빛아파트</option></select></div>
+<button class="btn bp" onclick="doLogin()">로그인</button>
+<div class="lh"><strong>데모 계정</strong> (로컬 오프라인 전용)<br>admin / 1234 (관리자)<br>manager1 / 1234 (세종시)<br>manager2 / 1234 (대전)<br><span style="color:var(--amber)">⚠️ 운영 배포 시 scripts/store.js의 iDB() 데모 계정을 삭제하세요.</span></div>
+</div>
+</div></div>
+
+<!-- ===== 메인 앱 ===== -->
+<div id="AP"><div class="al">
+<div class="sb-overlay" id="sbOv" onclick="closeSB()"></div>
+<aside class="sb" id="sidebarEl">
+<div class="sbh"><div style="display:flex;align-items:center;gap:8px"><svg class="mascot-sm" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg"><ellipse cx="100" cy="130" rx="50" ry="55" fill="#3b82f6"/><ellipse cx="100" cy="128" rx="46" ry="50" fill="#60a5fa"/><path d="M56 80 Q58 58 100 54 Q142 58 144 80 Z" fill="#f59e0b"/><rect x="50" y="76" width="100" height="10" rx="5" fill="#eab308"/><ellipse cx="80" cy="115" rx="11" ry="13" fill="#0f172a"/><ellipse cx="120" cy="115" rx="11" ry="13" fill="#0f172a"/><ellipse cx="82" cy="116" rx="7" ry="9" fill="#1e40af"/><ellipse cx="122" cy="116" rx="7" ry="9" fill="#1e40af"/><circle cx="85" cy="111" r="4" fill="#fff"/><circle cx="125" cy="111" r="4" fill="#fff"/><circle cx="79" cy="118" r="2" fill="#fff" opacity=".5"/><circle cx="119" cy="118" r="2" fill="#fff" opacity=".5"/><ellipse cx="64" cy="132" rx="9" ry="6" fill="#818cf8" opacity=".3"/><ellipse cx="136" cy="132" rx="9" ry="6" fill="#818cf8" opacity=".3"/><path d="M90 140 Q100 150 110 140" fill="none" stroke="#1e3a5f" stroke-width="3" stroke-linecap="round"/></svg><div><h2>SITE-MASTER</h2><div class="sn" id="SN"></div></div></div></div>
+<nav class="sbn">
+<div class="ns"><div class="nst">메인</div><div class="ni active" data-p="dash" onclick="nav('dash')">📊 대시보드</div><div class="ni" data-p="notice" onclick="nav('notice')">📢 공지사항<span class="bdg" id="NB" style="display:none">0</span></div><div class="ni" data-p="info" onclick="nav('info')">🏗️ 현장정보</div></div>
+<div class="ns"><div class="nst">시공관리</div><div class="ni" data-p="v3d" onclick="nav('v3d')">🏢 3D 시공현황</div><div class="ni" data-p="prog" onclick="nav('prog')">📋 시공현황</div><div class="ni" data-p="bldg" onclick="nav('bldg')">⚙️ 동 설정</div></div>
+<div class="ns"><div class="nst">발주관리</div><div class="ni" data-p="alerts" onclick="nav('alerts')">🔔 발주 알림<span class="bdg" id="AB" style="display:none">0</span></div><div class="ni" data-p="pset" id="navPS" onclick="nav('pset')">⚡ 발주 설정</div><div class="ni" data-p="pstat" onclick="nav('pstat')">📦 발주 현황</div></div>
+<div class="ns"><div class="nst">검수관리</div><div class="ni" data-p="insp" onclick="nav('insp')">🔬 공장검수</div></div>
+<div class="ns" id="navAdmin" style="display:none"><div class="nst">관리자</div><div class="ni" data-p="sites" onclick="nav('sites')">🏗️ 현장 생성/관리</div><div class="ni" data-p="users" onclick="nav('users')">👷 담당자 배정</div></div>
+<div class="ns"><div class="nst">기록</div><div class="ni" data-p="hist" onclick="nav('hist')">📝 수정이력</div></div>
+</nav>
+<div class="sbf"><div class="ui"><div class="ua" id="UA"></div><div class="ud"><div class="nm" id="UN"></div><div class="rl" id="UR"></div></div></div><div id="cloudBadge" style="display:none;text-align:center;padding:4px;margin-top:4px;font-size:9px;color:var(--cyan);background:rgba(6,182,212,.08);border-radius:4px">☁️ 클라우드 동기화</div><button class="lb" onclick="doLogout()">로그아웃</button></div>
+</aside>
+<main class="mc">
+<div class="ch"><button class="hamburger" onclick="toggleSB()">☰</button><div><h2 id="PT">대시보드</h2><div class="bc" id="PB"></div></div></div>
+<div class="cb">
+<div class="pg active" id="pg-dash"><div id="dashGreet"></div><div class="gr g4" id="DS"></div><div class="gr g2" style="margin-top:12px"><div class="cd"><div class="ct">현장별 진행률</div><div id="SP"></div></div><div class="cd"><div class="ct">최근 알림</div><div id="RA"></div></div></div></div>
+<div class="pg" id="pg-info"><div class="cd"><div class="ct">건축 개요<button class="btn bs bo" style="margin-left:auto" onclick="toggleEdit()">수정</button></div><div id="SV"></div><div id="SE" style="display:none"></div></div><div class="cd" id="SLS" style="display:none"><div class="ct">현장 목록</div><div id="SLA"></div></div></div>
+<div class="pg" id="pg-v3d"><div class="cd" style="padding:0;overflow:hidden">
+<div style="padding:10px 14px;display:flex;align-items:center;gap:8px;border-bottom:1px solid var(--b1);flex-wrap:wrap">
+<span style="font-size:13px;font-weight:700">3D 시공현황</span>
+<select id="v3dS" onchange="upd3D();centerOnBuildings()" style="padding:4px 8px;background:var(--bg1);border:1px solid var(--b1);color:var(--t1);border-radius:6px;font-size:11px"></select>
+<select id="v3dB" onchange="upd3D();centerOnBuildings()" style="padding:4px 8px;background:var(--bg1);border:1px solid var(--b1);color:var(--t1);border-radius:6px;font-size:11px"></select>
+<label style="font-size:11px;color:var(--t2);display:flex;align-items:center;gap:3px;margin-left:auto;cursor:pointer"><input type="checkbox" id="v3dEdit" onchange="toggle3DEdit()"> 배치편집</label>
+</div>
+<div id="v3d">
+<div class="vl"><div class="li"><div class="lco" style="background:#64748b"></div>준비중</div><div class="li"><div class="lco" style="background:#f59e0b"></div>시공중</div><div class="li"><div class="lco" style="background:#3b82f6"></div>시공완료</div></div>
+<div class="vi" id="VT" style="display:none"><div class="tl" id="VTT"></div><div id="VTC"></div></div>
+<div class="sun-panel" id="sunPanel"><span id="sunIcon">☀️</span><input type="date" id="sunDate" onchange="updateSun()" style="padding:2px;background:var(--bg1);border:1px solid var(--b1);color:var(--t1);border-radius:4px;font-size:9px;width:95px"><input type="range" id="sunTime" min="4" max="20" step="0.25" value="10" oninput="updateSun()"><span class="sun-time" id="sunTimeLabel">10:00</span><span style="font-size:8px" id="sunAltLabel"></span></div>
+<div class="v-toolbar"><button onclick="dist=Math.max(15,dist*.75)" style="font-size:14px;font-weight:700;min-width:28px">+</button><button onclick="dist=Math.min(300,dist*1.35)" style="font-size:14px;font-weight:700;min-width:28px">-</button><button onclick="viewAllBuildings()" title="전체 동을 한 화면에">전체</button><button onclick="reset3DCam()">리셋</button><button onclick="view3DTop()">탑뷰</button><button onclick="view3DFront()">정면</button><button onclick="centerOnBuildings()">중심</button><button class="mob-toggle" style="display:none" onclick="mobToggle('vl',this)">범례</button><button class="mob-toggle" style="display:none" onclick="mobToggle('sun',this)">☀️</button><button class="mob-toggle" style="display:none" onclick="mobToggle('map',this)">지도</button></div>
+<div class="pos-editor" id="posEditor" style="display:none"><div style="font-weight:700;margin-bottom:6px;color:var(--cyan)">배치 편집</div><div id="posControls"></div><button class="btn bx bg" onclick="savePosEdits()" style="margin-top:6px;width:100%">저장</button></div>
+<div class="minimap-wrap"><div class="minimap-header">배치도 <span id="mmSiteName"></span></div><canvas id="mmCv" width="180" height="180"></canvas></div>
+</div>
+</div></div>
+<div class="pg" id="pg-prog"><div class="cd"><div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap"><span style="font-size:13px;font-weight:700">시공현황</span><select id="prS" onchange="rPT()" style="padding:4px 8px;background:var(--bg1);border:1px solid var(--b1);color:var(--t1);border-radius:6px;font-size:11px"></select><select id="prB" onchange="rPT()" style="padding:4px 8px;background:var(--bg1);border:1px solid var(--b1);color:var(--t1);border-radius:6px;font-size:11px"></select><div style="margin-left:auto;display:flex;gap:4px"><button class="btn bx bo" onclick="dlExcel()">엑셀↓</button><label class="btn bx bg" style="cursor:pointer">엑셀↑<input type="file" accept=".xlsx,.xls,.csv" onchange="ulExcel(event)" style="display:none"></label></div></div><div style="font-size:9px;color:var(--t3);margin-bottom:8px">클릭: 준비중→시공중→시공완료→준비중</div><div class="tw" id="PTW"></div></div></div>
+<div class="pg" id="pg-bldg"><div class="cd"><div class="ct">동 설정</div><div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap"><select id="cfS" onchange="rBC()" style="padding:6px 10px;background:var(--bg1);border:1px solid var(--b1);color:var(--t1);border-radius:6px;font-size:12px"></select><button class="btn bs bg" onclick="openAddB()">+ 동 추가</button></div><div id="BCL"></div></div></div>
+<div class="pg" id="pg-alerts"><div class="cd"><div class="ct">발주 알림</div><div id="PAL"></div></div></div>
+<div class="pg" id="pg-pset"><div class="cd"><div class="ct">발주 설정 <span style="font-size:10px;color:var(--amber)">관리자전용</span></div><div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap"><select id="psS" onchange="rPS()" style="padding:6px 10px;background:var(--bg1);border:1px solid var(--b1);color:var(--t1);border-radius:6px;font-size:12px"></select><button class="btn bs bg" onclick="openAddRule()">+ 규칙</button></div><div class="tw"><table><thead><tr><th>자재</th><th>조건</th><th>리드타임</th><th>대상</th><th>상태</th><th>관리</th></tr></thead><tbody id="PSB"></tbody></table></div></div></div>
+<div class="pg" id="pg-pstat"><div class="cd"><div class="ct">발주 진행현황</div><div style="font-size:9px;color:var(--t3);margin-bottom:10px">발주준비→의뢰서상신→입찰예정→입찰완료→발주완료</div><div class="tw"><table><thead><tr><th>현장</th><th>자재</th><th>발주일</th><th>상태</th><th>담당</th><th>관리</th></tr></thead><tbody id="PST"></tbody></table></div></div></div>
+<div class="pg" id="pg-insp"><div class="cd"><div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;flex-wrap:wrap"><span style="font-size:13px;font-weight:700">공장검수/테스트</span><select id="isS" onchange="rInsp()" style="padding:4px 8px;background:var(--bg1);border:1px solid var(--b1);color:var(--t1);border-radius:6px;font-size:11px"></select><button class="btn bs bg" style="margin-left:auto" onclick="openAddInsp()">+ 추가</button></div><div id="IL"></div></div></div>
+<div class="pg" id="pg-sites"><div class="cd"><div class="ct">현장 생성/관리 <span id="siteCount" style="font-size:11px;color:var(--t3)"></span><button class="btn bs bg" style="margin-left:auto" onclick="openAddSite()">+ 현장 추가</button></div><div id="SML"></div></div></div>
+<div class="pg" id="pg-users"><div class="cd"><div class="ct">담당자 배정</div><div style="font-size:11px;color:var(--t3);margin-bottom:12px">담당자에게 현장을 배정하면 해당 현장만 볼 수 있습니다</div><div id="UML"></div></div></div>
+<div class="pg" id="pg-notice">
+<div class="cd">
+<div class="ct">공지사항 <span id="noticeAdminBtn" style="display:none;margin-left:auto"><button class="btn bs bg" onclick="openAddNotice()">+ 공지 작성</button></span></div>
+<div id="NL"></div>
+</div>
+</div>
+<div class="pg" id="pg-hist"><div class="cd"><div class="ct">수정이력</div><div id="HL"></div></div></div>
+</div></main></div></div>
+
+<!-- Mascot -->
+<div class="mascot-float hide" id="mascotFloat">
+<div id="mascotBody" onclick="mascotPoke()" style="cursor:pointer"></div>
+<div class="mascot-bubble" id="mascotBubble" style="display:none" onclick="hideMascotTip()">
+<div class="mb-title" id="mbTitle"></div>
+<div class="mb-msg" id="mbMsg"></div>
+</div>
+</div>
+
+<!-- ===== Modals ===== -->
+<div class="mo" id="mAddSite"><div class="md"><div class="mh"><h3 id="mSiteTitle">현장 추가</h3><button class="mx" onclick="cM('mAddSite')">×</button></div><div class="mb">
+<div class="fr"><div class="fd"><label>현장명 *</label><input id="nsName" placeholder="세종시 행복아파트"></div><div class="fd"><label>공사명</label><input id="nsProject" placeholder="세종시 행복아파트 신축공사"></div></div>
+<div class="fr"><div class="fd"><label>위치</label><input id="nsLocation" placeholder="세종특별자치시 행복동 123-4"></div><div class="fd"><label>구조</label><input id="nsStructure" placeholder="철근콘크리트 벽식구조"></div></div>
+<div class="fr"><div class="fd"><label>위도 (°N)</label><input id="nsLat" type="number" step="0.01" placeholder="36.48"></div><div class="fd"><label>경도 (°E)</label><input id="nsLng" type="number" step="0.01" placeholder="127.00"></div></div>
+<div class="fr"><div class="fd"><label>발주처</label><input id="nsOwner"></div><div class="fd"><label>시공사</label><input id="nsContractor"></div></div>
+<div class="fr"><div class="fd"><label>감리사</label><input id="nsSupervisor"></div><div class="fd"><label>세대수</label><input id="nsHouseholds"></div></div>
+<div class="fr"><div class="fd"><label>대지면적</label><input id="nsTotalArea"></div><div class="fd"><label>건축면적</label><input id="nsBuildArea"></div></div>
+<div class="fr"><div class="fd"><label>착공일</label><input type="date" id="nsStart"></div><div class="fd"><label>준공예정일</label><input type="date" id="nsEnd"></div></div>
+<input type="hidden" id="nsEditId" value="">
+</div><div class="mf"><button class="btn bs bo" onclick="cM('mAddSite')">취소</button><button class="btn bs bg" onclick="saveSite()">저장</button></div></div></div>
+
+<div class="mo" id="mUserEdit"><div class="md"><div class="mh"><h3>담당자 현장 배정</h3><button class="mx" onclick="cM('mUserEdit')">×</button></div><div class="mb">
+<div class="fd" style="margin-bottom:12px"><label>담당자</label><div id="ueUserName" style="font-size:14px;font-weight:700;padding:8px 0"></div></div>
+<div class="fd"><label>배정 현장 (체크하여 선택)</label><div id="ueSiteChecks" style="max-height:300px;overflow-y:auto"></div></div>
+<input type="hidden" id="ueUserId" value="">
+</div><div class="mf"><button class="btn bs bo" onclick="cM('mUserEdit')">취소</button><button class="btn bs bg" onclick="saveUserSites()">저장</button></div></div></div>
+
+<div class="mo" id="mAddB"><div class="md"><div class="mh"><h3>동 추가</h3><button class="mx" onclick="cM('mAddB')">×</button></div><div class="mb">
+<div class="fr"><div class="fd"><label>동 번호</label><input id="nBN" placeholder="101"></div><div class="fd"><label>동 이름</label><input id="nBNm" placeholder="101동"></div></div>
+<div class="fr c3"><div class="fd"><label>지하(최대10)</label><input type="number" id="nBBm" min="0" max="10" value="2"></div><div class="fd"><label>지상(최대50)</label><input type="number" id="nBF" min="1" max="50" value="25"></div><div class="fd"><label>호수(최대6)</label><input type="number" id="nBU" min="1" max="6" value="4"></div></div>
+<div class="fr"><div class="fd"><label>X위치</label><input type="number" id="nBX" value="0" step="5"></div><div class="fd"><label>Z위치</label><input type="number" id="nBZ" value="0" step="5"></div></div>
+<div class="fr c1"><div class="fd"><label>회전(도)</label><input type="number" id="nBRot" value="0" step="15" min="0" max="345"></div></div>
+<div class="fd"><label>건물 형태</label><div class="bts" id="BTS">
+<div class="btc selected" data-t="plate" onclick="selBT(this)"><div class="ti">🏢</div><div class="tn">판상형</div><div class="td">일자형</div></div>
+<div class="btc" data-t="tower" onclick="selBT(this)"><div class="ti">🏙️</div><div class="tn">타워형</div><div class="td">정방형</div></div>
+<div class="btc" data-t="corridor" onclick="selBT(this)"><div class="ti">🏨</div><div class="tn">복도형</div><div class="td">양측배치</div></div>
+<div class="btc" data-t="mixed" onclick="selBT(this)"><div class="ti">🏗️</div><div class="tn">혼합형</div><div class="td">판상+타워</div></div>
+<div class="btc" data-t="lshape" onclick="selBT(this)"><div class="ti">🔲</div><div class="tn">ㄱ자형</div><div class="td">L자</div></div>
+<div class="btc" data-t="ushape" onclick="selBT(this)"><div class="ti">🔳</div><div class="tn">ㄷ자형</div><div class="td">U자</div></div>
+</div></div>
+</div><div class="mf"><button class="btn bs bo" onclick="cM('mAddB')">취소</button><button class="btn bs bg" onclick="addB()">추가</button></div></div></div>
+
+<div class="mo" id="mAddR"><div class="md"><div class="mh"><h3>발주 규칙</h3><button class="mx" onclick="cM('mAddR')">×</button></div><div class="mb"><div class="fr"><div class="fd"><label>자재명</label><input id="nRM"></div><div class="fd"><label>조건(N층 완료시)</label><input type="number" id="nRF" min="1" max="50"></div></div><div class="fr"><div class="fd"><label>리드타임(일)</label><input type="number" id="nRL" min="1"></div><div class="fd"><label>대상</label><select id="nRT"><option value="all">전체</option><option value="admin">관리자</option><option value="manager">현장담당</option></select></div></div></div><div class="mf"><button class="btn bs bo" onclick="cM('mAddR')">취소</button><button class="btn bs bg" onclick="addRule()">추가</button></div></div></div>
+
+<div class="mo" id="mInsp"><div class="md"><div class="mh"><h3 id="mIT">검수항목</h3><button class="mx" onclick="cM('mInsp')">×</button></div><div class="mb"><div class="fr"><div class="fd"><label>검수명</label><input id="iNm"></div><div class="fd"><label>카테고리</label><select id="iCat"><option value="factory">공장검수</option><option value="test">테스트</option></select></div></div><div class="fr"><div class="fd"><label>대상</label><input id="iTgt"></div><div class="fd"><label>업체</label><input id="iVen"></div></div><div class="fr"><div class="fd"><label>예정일</label><input type="date" id="iDt"></div><div class="fd"><label>상태</label><select id="iSt"><option value="scheduled">예정</option><option value="inprogress">진행중</option><option value="pass">합격</option><option value="fail">불합격</option><option value="retest">재검수</option></select></div></div><div class="fr"><div class="fd"><label>담당자</label><input id="iMgr"></div><div class="fd"><label>장소</label><input id="iLoc"></div></div><div class="fr c1"><div class="fd"><label>비고</label><textarea id="iNt" rows="2" style="resize:vertical"></textarea></div></div><input type="hidden" id="iEid" value=""></div><div class="mf"><button class="btn bs bo" onclick="cM('mInsp')">취소</button><button class="btn bs bg" onclick="saveInsp()">저장</button></div></div></div>
+
+<div class="mo" id="mOrd"><div class="md"><div class="mh"><h3>발주 수정</h3><button class="mx" onclick="cM('mOrd')">×</button></div><div class="mb"><div class="fr"><div class="fd"><label>자재명</label><input id="oMat"></div><div class="fd"><label>발주일</label><input type="date" id="oDt"></div></div><div class="fr"><div class="fd"><label>상태</label><select id="oSt"><option value="ready">발주준비</option><option value="request">의뢰서상신</option><option value="bidding">입찰예정</option><option value="bidcomplete">입찰완료</option><option value="ordered">발주완료</option></select></div><div class="fd"><label>비고</label><input id="oNt"></div></div><input type="hidden" id="oId"></div><div class="mf"><button class="btn bs bd" onclick="delOrd()" style="margin-right:auto">삭제</button><button class="btn bs bo" onclick="cM('mOrd')">취소</button><button class="btn bs bg" onclick="saveOrd()">저장</button></div></div></div>
+
+<div class="mo" id="mAddNotice"><div class="md"><div class="mh"><h3 id="mNT">공지 작성</h3><button class="mx" onclick="cM('mAddNotice')">×</button></div><div class="mb">
+<div class="fr c1"><div class="fd"><label>제목</label><input id="nTitle" placeholder="공지 제목을 입력하세요"></div></div>
+<div class="fr"><div class="fd"><label>우선순위</label><select id="nPrio"><option value="normal">일반</option><option value="urgent">긴급</option></select></div><div class="fd"><label>대상 현장</label><select id="nSiteTarget"><option value="all">전체 현장</option></select></div></div>
+<div class="fr c1"><div class="fd"><label>내용</label><textarea id="nContent" rows="5" style="resize:vertical;font-size:14px" placeholder="공지 내용을 입력하세요"></textarea></div></div>
+<input type="hidden" id="nId" value="">
+</div><div class="mf"><button class="btn bs bo" onclick="cM('mAddNotice')">취소</button><button class="btn bs bg" onclick="saveNotice()">저장</button></div></div></div>
+
+<!-- ===== Scripts (로드 순서 중요) ===== -->
+<!-- 1) 설정/상수 -->
+<script src="scripts/config.js"></script>
+<!-- 2) 로컬 저장소 -->
+<script src="scripts/store.js"></script>
+<!-- 3) 공용 유틸 (esc/toast/modal/helpers) -->
+<script src="scripts/utils.js"></script>
+<!-- 4) 마스코트 (SVG + 반응) -->
+<script src="scripts/mascot.js"></script>
+<!-- 5) Firebase (cloud auth/sync/realtime/notice) -->
+<script src="scripts/firebase.js"></script>
+<!-- 6) 3D 뷰어 (Three.js 래퍼) -->
+<script src="scripts/viewer3d.js"></script>
+<!-- 7) 페이지 렌더러 -->
+<script src="scripts/pages.js"></script>
+<!-- 8) 로컬 로그인/네비 (전역 상태 선언 포함) -->
+<script src="scripts/auth.js"></script>
+<!-- 9) 엔트리 (DOMContentLoaded + CDN 지연 로드) -->
+<script src="scripts/main.js"></script>
+</body>
+</html>
