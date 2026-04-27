@@ -1,0 +1,39 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isSignedIn() { return request.auth != null; }
+    function myProfile() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+    function myOrg() { return myProfile().orgId; }
+    function myRole() { return myProfile().role; }
+
+    // 사용자 문서 — 본인 또는 같은 조직 관리자만
+    match /users/{uid} {
+      allow read: if isSignedIn() &&
+                  (request.auth.uid == uid ||
+                   resource.data.orgId == myOrg());
+      allow create: if request.auth.uid == uid;
+      allow update: if request.auth.uid == uid ||
+                    (myRole() == 'admin' && resource.data.orgId == myOrg());
+      allow delete: if false;
+    }
+
+    // 조직 문서 — 가입 시 orgCode 조회 위해 list 허용,
+    // read/write는 본인 조직만
+    match /organizations/{oid} {
+      allow read, list: if isSignedIn();
+      allow create: if isSignedIn();
+      allow update, delete: if isSignedIn() && myRole() == 'admin' && myOrg() == oid;
+    }
+
+    // 조직 하위 데이터 — 같은 조직만 접근
+    match /orgs/{oid}/{col}/{doc} {
+      allow read: if isSignedIn() && myOrg() == oid;
+      allow write: if isSignedIn() && myOrg() == oid &&
+                   (col != 'procRules' || myRole() == 'admin') &&
+                   (col != 'announcements' || myRole() == 'admin' ||
+                    request.resource.data.createdBy == request.auth.uid);
+    }
+  }
+}
