@@ -105,65 +105,31 @@ function _showOrgSetupModal(){
   var defaultName=(FB_USER&&FB_USER.displayName)||(FB_USER&&FB_USER.email?FB_USER.email.split('@')[0]:'');
   var nEl=document.getElementById('osName');if(nEl)nEl.value=defaultName;
   var oEl=document.getElementById('osOrgName');if(oEl)oEl.value='';
-  var cEl=document.getElementById('osOrgCode');if(cEl)cEl.value='';
-  switchOrgSetupType('new');
   oM('mOrgSetup');
 }
 
-function switchOrgSetupType(type){
-  document.getElementById('osNewArea').style.display=type==='new'?'block':'none';
-  document.getElementById('osJoinArea').style.display=type==='join'?'block':'none';
-  document.getElementById('osNew').style.background=type==='new'?'rgba(16,185,129,.15)':'var(--bg2)';
-  document.getElementById('osNew').style.color=type==='new'?'var(--green)':'var(--t3)';
-  document.getElementById('osJoin').style.background=type==='join'?'rgba(245,158,11,.15)':'var(--bg2)';
-  document.getElementById('osJoin').style.color=type==='join'?'var(--amber)':'var(--t3)';
-}
+// (deprecated, no-op) — 가입 옵션이 단일화됨
+function switchOrgSetupType(type){}
 
 function finishOrgSetup(){
   if(!FB_USER){toast('인증 상태 오류','error');return;}
   var name=document.getElementById('osName').value.trim();
   if(!name){toast('이름을 입력하세요','error');return;}
-  var isJoin=document.getElementById('osJoinArea').style.display!=='none';
-  var orgCode=isJoin?document.getElementById('osOrgCode').value.trim().toUpperCase():'';
-  var orgName=isJoin?'':document.getElementById('osOrgName').value.trim();
-  if(isJoin&&orgCode.length<4){toast('조직 코드를 입력하세요','error');return;}
+  var orgName=document.getElementById('osOrgName').value.trim();
   var uid=FB_USER.uid;
-  var setupPromise;
-  // 이미 user 문서·orgId가 있으면 신규 조직 생성·참여 차단 (중복 방지)
-  setupPromise=FB_DB.collection('users').doc(uid).get().then(function(existing){
+  // 이미 user 문서·orgId가 있으면 신규 조직 생성 차단 (중복 방지)
+  FB_DB.collection('users').doc(uid).get().then(function(existing){
     if(existing.exists&&existing.data().orgId){
-      var prev=existing.data();
-      throw new Error('이미 "'+(prev.orgId)+'" 조직에 소속되어 있습니다. 로그아웃 후 다시 로그인해주세요.');
+      throw new Error('이미 "'+(existing.data().orgId)+'" 조직에 소속되어 있습니다. 로그아웃 후 다시 로그인해주세요.');
     }
-    if(isJoin){
-      return FB_DB.collection('organizations').where('orgCode','==',orgCode).get().then(function(snap){
-        if(snap.empty)throw new Error('잘못된 조직 코드입니다.');
-        var orgDoc=snap.docs[0];
-        var email=(FB_USER&&FB_USER.email)||'';
-        return FB_DB.collection('users').doc(uid).set({
-          name:name,email:email,role:'manager',orgId:orgDoc.id,sites:[],
-          status:'pending',
-          createdAt:firebase.firestore.FieldValue.serverTimestamp()
-        }).then(function(){
-          return FB_DB.collection('orgs/'+orgDoc.id+'/notifications').add({
-            type:'newMember',targetRole:'admin',
-            uid:uid,name:name,email:email,
-            read:false,
-            createdAt:firebase.firestore.FieldValue.serverTimestamp()
-          });
-        }).then(function(){return {orgId:orgDoc.id,role:'manager',sites:[],status:'pending'};});
-      });
-    }else{
-      var orgRef=FB_DB.collection('organizations').doc();
-      var code=_genOrgCode();
-      var batch=FB_DB.batch();
-      var email2=(FB_USER&&FB_USER.email)||'';
-      batch.set(orgRef,{name:orgName||name+'의 조직',orgCode:code,createdAt:firebase.firestore.FieldValue.serverTimestamp()});
-      batch.set(FB_DB.collection('users').doc(uid),{name:name,email:email2,role:'admin',orgId:orgRef.id,sites:['all'],status:'active',createdAt:firebase.firestore.FieldValue.serverTimestamp()});
-      return batch.commit().then(function(){return {orgId:orgRef.id,role:'admin',sites:['all'],status:'active'};});
-    }
-  });
-  setupPromise.then(function(p){
+    var orgRef=FB_DB.collection('organizations').doc();
+    var code=_genOrgCode();
+    var batch=FB_DB.batch();
+    var email=(FB_USER&&FB_USER.email)||'';
+    batch.set(orgRef,{name:orgName||name+'의 조직',orgCode:code,createdAt:firebase.firestore.FieldValue.serverTimestamp()});
+    batch.set(FB_DB.collection('users').doc(uid),{name:name,email:email,role:'admin',orgId:orgRef.id,sites:['all'],status:'active',createdAt:firebase.firestore.FieldValue.serverTimestamp()});
+    return batch.commit().then(function(){return {orgId:orgRef.id,role:'admin',sites:['all'],status:'active'};});
+  }).then(function(p){
     cM('mOrgSetup');
     _enterApp({name:name,role:p.role,orgId:p.orgId,sites:p.sites,status:p.status});
   }).catch(function(e){
@@ -212,19 +178,7 @@ function _showPendingScreen(profileData){
 }
 
 function _enterApp(profileData){
-  // 승인 대기 상태면 대기 화면으로
-  if(profileData.status==='pending'){
-    _showPendingScreen(profileData);
-    return;
-  }
-  // 거절된 사용자
-  if(profileData.status==='rejected'){
-    document.getElementById('LP').style.display='none';
-    document.getElementById('AP').style.display='none';
-    var rs=document.getElementById('rejectedScreen');
-    if(rs)rs.style.display='flex';
-    return;
-  }
+  // 가입 승인 대기 워크플로 제거됨 — 모든 가입자는 즉시 진입
   CU_ORG_ID=profileData.orgId;
   CU={id:FB_USER.uid,name:profileData.name,role:profileData.role,
     sites:profileData.sites||['all'],
@@ -263,14 +217,8 @@ function cloudLogin(){
 
 function showSignupForm(){document.getElementById('signupForm').style.display='block';}
 function hideSignupForm(){document.getElementById('signupForm').style.display='none';}
-function switchSignupType(type){
-  document.getElementById('signupNew').style.display=type==='new'?'block':'none';
-  document.getElementById('signupJoin').style.display=type==='join'?'block':'none';
-  document.getElementById('stNew').style.background=type==='new'?'rgba(16,185,129,.15)':'var(--bg2)';
-  document.getElementById('stNew').style.color=type==='new'?'var(--green)':'var(--t3)';
-  document.getElementById('stJoin').style.background=type==='join'?'rgba(245,158,11,.15)':'var(--bg2)';
-  document.getElementById('stJoin').style.color=type==='join'?'var(--amber)':'var(--t3)';
-}
+// (deprecated, no-op) — 가입 옵션이 단일화됨
+function switchSignupType(type){}
 
 function cloudSignup(){
   if(!FB_AUTH){setCloudStatus('Firebase 미설정',true);return;}
@@ -280,46 +228,18 @@ function cloudSignup(){
   if(!email||!pw){setCloudStatus('이메일과 비밀번호를 입력하세요',true);return;}
   if(pw.length<6){setCloudStatus('비밀번호 6자 이상',true);return;}
   if(!name){setCloudStatus('이름을 입력하세요',true);return;}
-  var isJoin=document.getElementById('signupJoin').style.display!=='none';
-  var orgCode=isJoin?document.getElementById('signupOrgCode').value.trim().toUpperCase():'';
-  var orgName=isJoin?'':document.getElementById('signupOrg').value.trim();
-  if(isJoin&&orgCode.length<4){setCloudStatus('조직 코드를 입력하세요',true);return;}
+  var orgName=document.getElementById('signupOrg').value.trim();
   setCloudStatus('가입 중...');
   FB_AUTH.createUserWithEmailAndPassword(email,pw).then(function(res){
     var uid=res.user.uid;
-    var profilePromise;
-    if(isJoin){
-      setCloudStatus('조직 참여 중...');
-      profilePromise=FB_DB.collection('organizations').where('orgCode','==',orgCode).get().then(function(snap){
-        if(snap.empty){
-          return res.user.delete().then(function(){throw new Error('잘못된 조직 코드입니다. 관리자에게 확인하세요.');});
-        }
-        var orgDoc=snap.docs[0];
-        // 신규 가입자는 status:'pending' (관리자 승인 + 현장 배정 대기)
-        return FB_DB.collection('users').doc(uid).set({
-          name:name,email:email,role:'manager',orgId:orgDoc.id,sites:[],
-          status:'pending',
-          createdAt:firebase.firestore.FieldValue.serverTimestamp()
-        }).then(function(){
-          // 관리자에게 신규 가입 알림 (인앱)
-          return FB_DB.collection('orgs/'+orgDoc.id+'/notifications').add({
-            type:'newMember',targetRole:'admin',
-            uid:uid,name:name,email:email,
-            read:false,
-            createdAt:firebase.firestore.FieldValue.serverTimestamp()
-          }).then(function(){return orgDoc.data().name;});
-        });
-      });
-    }else{
-      // 새 조직 생성자는 즉시 admin + active
-      setCloudStatus('조직 생성 중...');
-      var orgRef=FB_DB.collection('organizations').doc();
-      var code=_genOrgCode();
-      var batch=FB_DB.batch();
-      batch.set(orgRef,{name:orgName||name+'의 조직',orgCode:code,createdAt:firebase.firestore.FieldValue.serverTimestamp()});
-      batch.set(FB_DB.collection('users').doc(uid),{name:name,email:email,role:'admin',orgId:orgRef.id,sites:['all'],status:'active',createdAt:firebase.firestore.FieldValue.serverTimestamp()});
-      profilePromise=batch.commit().then(function(){return orgName||name+'의 조직';});
-    }
+    // 모든 가입자는 즉시 admin + active 상태로 본인 조직 생성
+    setCloudStatus('조직 생성 중...');
+    var orgRef=FB_DB.collection('organizations').doc();
+    var code=_genOrgCode();
+    var batch=FB_DB.batch();
+    batch.set(orgRef,{name:orgName||name+'의 조직',orgCode:code,createdAt:firebase.firestore.FieldValue.serverTimestamp()});
+    batch.set(FB_DB.collection('users').doc(uid),{name:name,email:email,role:'admin',orgId:orgRef.id,sites:['all'],status:'active',createdAt:firebase.firestore.FieldValue.serverTimestamp()});
+    var profilePromise=batch.commit().then(function(){return orgName||name+'의 조직';});
     profilePromise.then(function(joinedOrgName){
       return res.user.sendEmailVerification().then(function(){
         setCloudStatus('✅ '+joinedOrgName+' 가입 완료! 인증 메일을 확인하신 후 로그인하세요.');
