@@ -115,20 +115,43 @@ function finishOrgSetup(){
   if(!FB_USER){toast('인증 상태 오류','error');return;}
   var name=document.getElementById('osName').value.trim();
   if(!name){toast('이름을 입력하세요','error');return;}
-  var orgName=document.getElementById('osOrgName').value.trim();
   var uid=FB_USER.uid;
-  // 이미 user 문서·orgId가 있으면 신규 조직 생성 차단 (중복 방지)
+  var email=(FB_USER&&FB_USER.email)||'';
+  // 이미 user 문서·orgId가 있으면 차단 (중복 방지)
   FB_DB.collection('users').doc(uid).get().then(function(existing){
     if(existing.exists&&existing.data().orgId){
-      throw new Error('이미 "'+(existing.data().orgId)+'" 조직에 소속되어 있습니다. 로그아웃 후 다시 로그인해주세요.');
+      throw new Error('이미 조직에 소속되어 있습니다. 로그아웃 후 다시 로그인해주세요.');
     }
-    var orgRef=FB_DB.collection('organizations').doc();
-    var code=_genOrgCode();
-    var batch=FB_DB.batch();
-    var email=(FB_USER&&FB_USER.email)||'';
-    batch.set(orgRef,{name:orgName||name+'의 조직',orgCode:code,createdAt:firebase.firestore.FieldValue.serverTimestamp()});
-    batch.set(FB_DB.collection('users').doc(uid),{name:name,email:email,role:'admin',orgId:orgRef.id,sites:['all'],status:'active',createdAt:firebase.firestore.FieldValue.serverTimestamp()});
-    return batch.commit().then(function(){return {orgId:orgRef.id,role:'admin',sites:['all'],status:'active'};});
+    return FB_DB.collection('organizations').limit(1).get().then(function(orgSnap){
+      var batch=FB_DB.batch();
+      if(orgSnap.empty){
+        // 첫 가입자 = 메인관리자
+        var orgRef=FB_DB.collection('organizations').doc();
+        var code=_genOrgCode();
+        batch.set(orgRef,{name:name+'의 조직',orgCode:code,createdAt:firebase.firestore.FieldValue.serverTimestamp()});
+        batch.set(FB_DB.collection('users').doc(uid),{
+          name:name,email:email,role:'admin',isMainAdmin:true,
+          orgId:orgRef.id,sites:['all'],status:'active',
+          createdAt:firebase.firestore.FieldValue.serverTimestamp()
+        });
+        return batch.commit().then(function(){return {orgId:orgRef.id,role:'admin',sites:['all'],status:'active'};});
+      }else{
+        var orgDoc=orgSnap.docs[0];
+        batch.set(FB_DB.collection('users').doc(uid),{
+          name:name,email:email,role:'manager',isMainAdmin:false,
+          orgId:orgDoc.id,sites:[],status:'pending',
+          createdAt:firebase.firestore.FieldValue.serverTimestamp()
+        });
+        var notifRef=FB_DB.collection('orgs/'+orgDoc.id+'/notifications').doc();
+        batch.set(notifRef,{
+          type:'newMember',targetRole:'admin',
+          uid:uid,name:name,email:email,
+          read:false,
+          createdAt:firebase.firestore.FieldValue.serverTimestamp()
+        });
+        return batch.commit().then(function(){return {orgId:orgDoc.id,role:'manager',sites:[],status:'pending'};});
+      }
+    });
   }).then(function(p){
     cM('mOrgSetup');
     _enterApp({name:name,role:p.role,orgId:p.orgId,sites:p.sites,status:p.status});
@@ -178,7 +201,19 @@ function _showPendingScreen(profileData){
 }
 
 function _enterApp(profileData){
-  // 가입 승인 대기 워크플로 제거됨 — 모든 가입자는 즉시 진입
+  // 승인 대기 상태면 대기 화면으로
+  if(profileData.status==='pending'){
+    _showPendingScreen(profileData);
+    return;
+  }
+  // 거절된 사용자
+  if(profileData.status==='rejected'){
+    document.getElementById('LP').style.display='none';
+    document.getElementById('AP').style.display='none';
+    var rs=document.getElementById('rejectedScreen');
+    if(rs)rs.style.display='flex';
+    return;
+  }
   CU_ORG_ID=profileData.orgId;
   CU={id:FB_USER.uid,name:profileData.name,role:profileData.role,
     sites:profileData.sites||['all'],
@@ -228,26 +263,53 @@ function cloudSignup(){
   if(!email||!pw){setCloudStatus('이메일과 비밀번호를 입력하세요',true);return;}
   if(pw.length<6){setCloudStatus('비밀번호 6자 이상',true);return;}
   if(!name){setCloudStatus('이름을 입력하세요',true);return;}
-  var orgName=document.getElementById('signupOrg').value.trim();
   setCloudStatus('가입 중...');
   FB_AUTH.createUserWithEmailAndPassword(email,pw).then(function(res){
     var uid=res.user.uid;
-    // 모든 가입자는 즉시 admin + active 상태로 본인 조직 생성
-    setCloudStatus('조직 생성 중...');
-    var orgRef=FB_DB.collection('organizations').doc();
-    var code=_genOrgCode();
-    var batch=FB_DB.batch();
-    batch.set(orgRef,{name:orgName||name+'의 조직',orgCode:code,createdAt:firebase.firestore.FieldValue.serverTimestamp()});
-    batch.set(FB_DB.collection('users').doc(uid),{name:name,email:email,role:'admin',orgId:orgRef.id,sites:['all'],status:'active',createdAt:firebase.firestore.FieldValue.serverTimestamp()});
-    var profilePromise=batch.commit().then(function(){return orgName||name+'의 조직';});
-    profilePromise.then(function(joinedOrgName){
-      return res.user.sendEmailVerification().then(function(){
-        setCloudStatus('✅ '+joinedOrgName+' 가입 완료! 인증 메일을 확인하신 후 로그인하세요.');
-      },function(){
-        setCloudStatus('✅ '+joinedOrgName+' 가입 완료! 로그인 해주세요. (인증 메일 발송 실패)');
+    setCloudStatus('조직 확인 중...');
+    // 시스템에 조직이 0개 → 첫 가입자: 메인관리자 (조직 생성)
+    // 조직이 있으면 → 그 조직에 'pending' manager로 합류 (관리자 승인 대기)
+    return FB_DB.collection('organizations').limit(1).get().then(function(orgSnap){
+      var batch=FB_DB.batch();
+      if(orgSnap.empty){
+        // 첫 가입자 = 메인관리자
+        var orgRef=FB_DB.collection('organizations').doc();
+        var code=_genOrgCode();
+        batch.set(orgRef,{name:name+'의 조직',orgCode:code,createdAt:firebase.firestore.FieldValue.serverTimestamp()});
+        batch.set(FB_DB.collection('users').doc(uid),{
+          name:name,email:email,role:'admin',isMainAdmin:true,
+          orgId:orgRef.id,sites:['all'],status:'active',
+          createdAt:firebase.firestore.FieldValue.serverTimestamp()
+        });
+        return batch.commit().then(function(){return {first:true,orgName:name+'의 조직'};});
+      }else{
+        // 두번째 이후 = pending manager
+        var orgDoc=orgSnap.docs[0];
+        batch.set(FB_DB.collection('users').doc(uid),{
+          name:name,email:email,role:'manager',isMainAdmin:false,
+          orgId:orgDoc.id,sites:[],status:'pending',
+          createdAt:firebase.firestore.FieldValue.serverTimestamp()
+        });
+        // 관리자에게 신규 가입 알림
+        var notifRef=FB_DB.collection('orgs/'+orgDoc.id+'/notifications').doc();
+        batch.set(notifRef,{
+          type:'newMember',targetRole:'admin',
+          uid:uid,name:name,email:email,
+          read:false,
+          createdAt:firebase.firestore.FieldValue.serverTimestamp()
+        });
+        return batch.commit().then(function(){return {first:false,orgName:orgDoc.data().name};});
+      }
+    }).then(function(result){
+      return res.user.sendEmailVerification().catch(function(){}).then(function(){
+        if(result.first){
+          setCloudStatus('🎉 '+result.orgName+' 메인관리자로 가입 완료! 인증 메일을 확인하신 후 로그인하세요.');
+        }else{
+          setCloudStatus('✅ '+result.orgName+'에 가입 신청 완료! 인증 메일 확인 후 로그인하면 관리자 승인 대기 화면으로 이동합니다.');
+        }
+        hideSignupForm();FB_AUTH.signOut();
       });
-    }).then(function(){hideSignupForm();FB_AUTH.signOut();})
-    .catch(function(e){
+    }).catch(function(e){
       setCloudStatus('가입 실패: '+e.message,true);
       try{res.user.delete();}catch(_){}
     });
