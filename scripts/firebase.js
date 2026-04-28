@@ -70,14 +70,10 @@ function _loadProfileAndEnter(){
   }
   FB_DB.collection('users').doc(FB_USER.uid).get().then(function(doc){
     if(!doc.exists){
-      if(_isOAuthUser(FB_USER)){
-        // OAuth 신규 사용자 → 조직 설정 모달
-        _showOrgSetupModal();
-        return;
-      }
-      // 이메일/비번인데 프로필 없음 = 가입 중 실패한 고아 계정
-      setCloudStatus('프로필이 없습니다. 회원가입을 다시 진행해주세요.',true);
-      FB_AUTH.signOut();FB_USER=null;USE_CLOUD=false;CU_ORG_ID=null;
+      // 프로필 없음 — 가입 중 일부 실패했거나 OAuth 첫 로그인.
+      // 어느 경우든 조직 설정 모달로 복구
+      setCloudStatus('프로필이 없어 조직 설정으로 이동합니다...');
+      _showOrgSetupModal();
       return;
     }
     _enterApp(doc.data());
