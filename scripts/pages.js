@@ -543,15 +543,38 @@ function rUsers(){
       var el=document.getElementById('orgCodeDisplay');
       if(el&&doc.exists)el.textContent=doc.data().orgCode||'없음';
     });
+    orgCodeHtml+='<div id="pendingArea"></div>';
     orgCodeHtml+='<div class="tw" id="cloudUserTable"><div style="text-align:center;padding:20px;color:var(--t3)">사용자 로딩...</div></div>';
     orgCodeHtml+='<div style="margin-top:12px;padding:12px;background:rgba(59,130,246,.06);border:1px solid var(--b1);border-radius:var(--rs);font-size:11px;color:var(--t2)">'
       +'<div style="font-weight:600;margin-bottom:4px;color:var(--cyan)">사용 방법</div>'
-      +'1. 위 조직 코드를 팀원에게 공유<br>2. 팀원이 회원가입 시 "조직 참여" 선택 → 코드 입력<br>3. 가입 후 이 페이지에서 역할과 현장을 배정</div>';
+      +'1. 위 조직 코드를 팀원에게 공유<br>2. 팀원이 가입 시 "기존 조직 참여" 선택 → 코드 입력<br>3. <strong>승인 대기</strong> 카드에서 현장 배정 → 자동 활성화</div>';
     document.getElementById('UML').innerHTML=orgCodeHtml;
     FB_DB.collection('users').where('orgId','==',CU_ORG_ID).get().then(function(snap){
       var users=snap.docs.map(function(doc){var x=doc.data();x.id=doc.id;return x;});
-      document.getElementById('cloudUserTable').innerHTML='<table><thead><tr><th>이름</th><th>역할</th><th>배정 현장</th><th>관리</th></tr></thead><tbody>'
-        +users.map(function(u){
+      var pending=users.filter(function(u){return u.status==='pending';});
+      var active=users.filter(function(u){return u.status!=='pending';});
+
+      // 승인 대기 카드 섹션
+      var pendingArea=document.getElementById('pendingArea');
+      if(pending.length){
+        pendingArea.innerHTML='<div style="background:linear-gradient(135deg,rgba(245,158,11,.08),rgba(239,68,68,.06));border:1px solid var(--amber);border-radius:var(--r);padding:14px;margin-bottom:14px">'
+          +'<div style="font-size:13px;font-weight:700;color:var(--amber);margin-bottom:10px">⏳ 승인 대기 ('+pending.length+'명)</div>'
+          +'<div class="gr g2">'+pending.map(function(u){
+            return '<div style="background:var(--bg1);border:1px solid var(--b1);border-radius:var(--rs);padding:10px">'
+              +'<div style="display:flex;justify-content:space-between;align-items:start;gap:8px;margin-bottom:8px">'
+              +'<div><div style="font-size:13px;font-weight:700">'+esc(u.name)+'</div>'
+              +'<div style="font-size:10px;color:var(--t3);margin-top:2px">'+esc(u.email||'-')+'</div></div></div>'
+              +'<div style="display:flex;gap:4px"><button class="btn bx bg" style="flex:1" onclick="editUserSites(this.dataset.uid)" data-uid="'+esc(u.id)+'">✓ 승인 + 현장 배정</button>'
+              +'<button class="btn bx bd" onclick="rejectPendingUser(this.dataset.uid,this.dataset.name)" data-uid="'+esc(u.id)+'" data-name="'+esc(u.name)+'">거절</button></div></div>';
+          }).join('')+'</div></div>';
+      }else{
+        pendingArea.innerHTML='';
+      }
+
+      // 활성 사용자 테이블
+      document.getElementById('cloudUserTable').innerHTML='<div style="font-size:11px;color:var(--t3);margin-bottom:6px">활성 사용자 ('+active.length+'명)</div>'
+        +'<table><thead><tr><th>이름</th><th>역할</th><th>배정 현장</th><th>관리</th></tr></thead><tbody>'
+        +active.map(function(u){
           var isMe=u.id===FB_USER.uid;
           var siteNames=[];
           if(u.role==='admin')siteNames=['전체 현장'];
@@ -566,6 +589,10 @@ function rUsers(){
     });
     return;
   }
+
+  // pending 사용자 거절 (Firestore 사용자 문서 + Auth 계정 삭제는 관리자가 직접 Console에서)
+  // 여기서는 status를 'rejected'로 표시
+  // (전역 함수는 rejectPendingUser 아래 별도 정의)
   // 로컬 모드
   document.getElementById('UML').innerHTML='<div class="tw"><table><thead><tr><th>이름</th><th>아이디</th><th>역할</th><th>배정 현장</th><th>관리</th></tr></thead><tbody>'
     +(d.users||[]).map(function(u){
@@ -638,13 +665,62 @@ function saveUserSites(){
   var checks=document.querySelectorAll('#ueSiteChecks input[type=checkbox]');
   var selected=[];for(var i=0;i<checks.length;i++){if(checks[i].checked)selected.push(checks[i].value);}
   if(USE_CLOUD&&FB_DB){
-    FB_DB.collection('users').doc(userId).update({sites:selected}).then(function(){
-      cM('mUserEdit');toast('현장 배정 완료 ('+selected.length+'개)','success');rUsers();
+    // 사용자 문서를 가져와서 pending이면 status도 active로 전환
+    FB_DB.collection('users').doc(userId).get().then(function(doc){
+      var wasPending=doc.exists&&doc.data().status==='pending';
+      var userName=doc.exists?doc.data().name:'';
+      var update={sites:selected};
+      if(wasPending){
+        update.status='active';
+        update.approvedAt=firebase.firestore.FieldValue.serverTimestamp();
+        update.approvedBy=FB_USER.uid;
+      }
+      return FB_DB.collection('users').doc(userId).update(update).then(function(){
+        // pending → active 전환 시 가입자에게 인앱 알림 + 관리자 알림 read 처리
+        if(wasPending){
+          // 가입자에게 알림
+          FB_DB.collection('orgs/'+CU_ORG_ID+'/notifications').add({
+            type:'approved',targetUid:userId,
+            sites:selected,
+            read:false,
+            createdAt:firebase.firestore.FieldValue.serverTimestamp()
+          }).catch(function(){});
+          // 관리자가 본 newMember 알림 read 처리
+          FB_DB.collection('orgs/'+CU_ORG_ID+'/notifications')
+            .where('type','==','newMember').where('uid','==',userId).get().then(function(snap){
+            snap.forEach(function(d){d.ref.update({read:true}).catch(function(){});});
+          });
+          toast('✅ '+userName+'님 승인 완료 ('+selected.length+'개 현장 배정)','success');
+        }else{
+          toast('현장 배정 완료 ('+selected.length+'개)','success');
+        }
+        cM('mUserEdit');rUsers();
+      });
     }).catch(function(e){toast('배정 실패: '+e.message,'error');});
   }else{
     var d=gDB();
     for(var i2=0;i2<d.users.length;i2++){if(d.users[i2].id===userId){d.users[i2].sites=selected;break;}}
     sDB(d);cM('mUserEdit');addHist('담당자 배정',userId+': '+selected.length+'개 현장');rUsers();toast('배정 완료','success');
+  }
+}
+
+// 가입 신청 거절 (status를 rejected로) — 클라이언트만 처리. Auth 계정은 콘솔에서 수동 삭제
+function rejectPendingUser(userId,userName){
+  if(CU.role!=='admin')return;
+  if(!confirm('"'+userName+'"님의 가입 신청을 거절하시겠습니까?\n해당 사용자는 더 이상 로그인할 수 없습니다.\n(Auth 계정 완전 삭제는 Firebase Console에서 수동으로 진행)'))return;
+  if(USE_CLOUD&&FB_DB){
+    FB_DB.collection('users').doc(userId).update({
+      status:'rejected',
+      rejectedAt:firebase.firestore.FieldValue.serverTimestamp(),
+      rejectedBy:FB_USER.uid
+    }).then(function(){
+      // newMember 알림 read 처리
+      FB_DB.collection('orgs/'+CU_ORG_ID+'/notifications')
+        .where('type','==','newMember').where('uid','==',userId).get().then(function(snap){
+        snap.forEach(function(d){d.ref.update({read:true}).catch(function(){});});
+      });
+      toast(userName+'님 거절됨','info');rUsers();
+    }).catch(function(e){toast('거절 실패: '+e.message,'error');});
   }
 }
 

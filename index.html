@@ -20,6 +20,30 @@
 <body>
 <div class="tc" id="TC"></div>
 
+<!-- ===== 가입 승인 대기 화면 (status:pending) ===== -->
+<div id="pendingScreen" style="display:none;align-items:center;justify-content:center;min-height:100vh;min-height:100dvh;background:linear-gradient(135deg,#0a0e17,#1a1a2e,#16213e);padding:16px">
+<div style="background:rgba(26,34,53,.95);border:1px solid var(--b2);border-radius:20px;padding:40px 32px;width:440px;max-width:100%;text-align:center">
+<div style="font-size:64px;margin-bottom:16px">⏳</div>
+<h2 style="font-size:20px;font-weight:900;background:linear-gradient(135deg,var(--amber),var(--cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:8px">가입 신청 접수됨</h2>
+<p style="font-size:13px;color:var(--t2);margin-bottom:6px"><strong id="pendingName" style="color:var(--cyan)"></strong>님,</p>
+<p style="font-size:13px;color:var(--t2);line-height:1.7">가입 신청이 정상 접수되었습니다.<br>관리자가 <strong style="color:var(--amber)">현장 배정</strong>을 완료하면<br>자동으로 화면이 전환됩니다.</p>
+<div style="margin:20px 0;padding:12px;background:rgba(59,130,246,.08);border:1px solid rgba(59,130,246,.2);border-radius:var(--rs);font-size:11px;color:var(--t2);line-height:1.7">
+💡 이 화면을 켜둔 채로 기다리시면<br>승인되는 즉시 자동 입장됩니다.<br>나중에 다시 로그인하셔도 동일하게 진행됩니다.
+</div>
+<button class="btn bo" onclick="doLogout()" style="width:100%;padding:10px">로그아웃</button>
+</div>
+</div>
+
+<!-- ===== 가입 거절 안내 화면 (status:rejected) ===== -->
+<div id="rejectedScreen" style="display:none;align-items:center;justify-content:center;min-height:100vh;min-height:100dvh;background:linear-gradient(135deg,#0a0e17,#1a1a2e,#16213e);padding:16px">
+<div style="background:rgba(26,34,53,.95);border:1px solid var(--red);border-radius:20px;padding:40px 32px;width:440px;max-width:100%;text-align:center">
+<div style="font-size:48px;margin-bottom:16px">🚫</div>
+<h2 style="font-size:18px;font-weight:700;color:var(--red);margin-bottom:12px">가입 신청 거절됨</h2>
+<p style="font-size:13px;color:var(--t2);line-height:1.7;margin-bottom:20px">관리자가 가입 신청을 거절하였습니다.<br>자세한 사유는 조직 관리자에게 문의해주세요.</p>
+<button class="btn bo" onclick="doLogout()" style="width:100%;padding:10px">로그아웃</button>
+</div>
+</div>
+
 <!-- ===== 로그인 화면 ===== -->
 <div id="LP">
 <div class="lc">

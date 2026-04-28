@@ -39,8 +39,13 @@ function doLogin(){
 
 function doLogout(){
   stopRealtime();
+  // 승인 대기 구독 정리
+  if(typeof _pendingUnsub!=='undefined'&&_pendingUnsub){try{_pendingUnsub();}catch(e){}_pendingUnsub=null;}
   if(USE_CLOUD&&FB_AUTH){FB_AUTH.signOut();FB_USER=null;USE_CLOUD=false;CU_ORG_ID=null;}
   CU=null;closeSB();
+  // 대기/거절 화면 닫기
+  var ps=document.getElementById('pendingScreen');if(ps)ps.style.display='none';
+  var rs=document.getElementById('rejectedScreen');if(rs)rs.style.display='none';
   document.getElementById('LP').style.display='flex';
   document.getElementById('AP').style.display='none';
   var mf=document.getElementById('mascotFloat');if(mf)mf.classList.add('hide');

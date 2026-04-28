@@ -114,22 +114,33 @@ function finishOrgSetup(){
     setupPromise=FB_DB.collection('organizations').where('orgCode','==',orgCode).get().then(function(snap){
       if(snap.empty)throw new Error('잘못된 조직 코드입니다.');
       var orgDoc=snap.docs[0];
+      var email=(FB_USER&&FB_USER.email)||'';
       return FB_DB.collection('users').doc(uid).set({
-        name:name,role:'manager',orgId:orgDoc.id,sites:[],
+        name:name,email:email,role:'manager',orgId:orgDoc.id,sites:[],
+        status:'pending',
         createdAt:firebase.firestore.FieldValue.serverTimestamp()
-      }).then(function(){return {orgId:orgDoc.id,role:'manager',sites:[]};});
+      }).then(function(){
+        // 관리자에게 신규 가입 알림
+        return FB_DB.collection('orgs/'+orgDoc.id+'/notifications').add({
+          type:'newMember',targetRole:'admin',
+          uid:uid,name:name,email:email,
+          read:false,
+          createdAt:firebase.firestore.FieldValue.serverTimestamp()
+        });
+      }).then(function(){return {orgId:orgDoc.id,role:'manager',sites:[],status:'pending'};});
     });
   }else{
     var orgRef=FB_DB.collection('organizations').doc();
     var code=_genOrgCode();
     var batch=FB_DB.batch();
+    var email2=(FB_USER&&FB_USER.email)||'';
     batch.set(orgRef,{name:orgName||name+'의 조직',orgCode:code,createdAt:firebase.firestore.FieldValue.serverTimestamp()});
-    batch.set(FB_DB.collection('users').doc(uid),{name:name,role:'admin',orgId:orgRef.id,sites:['all'],createdAt:firebase.firestore.FieldValue.serverTimestamp()});
-    setupPromise=batch.commit().then(function(){return {orgId:orgRef.id,role:'admin',sites:['all']};});
+    batch.set(FB_DB.collection('users').doc(uid),{name:name,email:email2,role:'admin',orgId:orgRef.id,sites:['all'],status:'active',createdAt:firebase.firestore.FieldValue.serverTimestamp()});
+    setupPromise=batch.commit().then(function(){return {orgId:orgRef.id,role:'admin',sites:['all'],status:'active'};});
   }
   setupPromise.then(function(p){
     cM('mOrgSetup');
-    _enterApp({name:name,role:p.role,orgId:p.orgId,sites:p.sites});
+    _enterApp({name:name,role:p.role,orgId:p.orgId,sites:p.sites,status:p.status});
   }).catch(function(e){
     toast('설정 실패: '+e.message,'error');
   });
@@ -147,7 +158,48 @@ function _genOrgCode(){
   for(var i=0;i<6;i++)code+=chars[Math.floor(Math.random()*chars.length)];return code;
 }
 
+// 승인 대기 화면 + 실시간 status 변경 감지
+var _pendingUnsub=null;
+function _showPendingScreen(profileData){
+  document.getElementById('LP').style.display='none';
+  document.getElementById('AP').style.display='none';
+  var ps=document.getElementById('pendingScreen');
+  if(ps)ps.style.display='flex';
+  var n=document.getElementById('pendingName');
+  if(n)n.textContent=profileData.name||'';
+  // 관리자가 승인하면 자동 진입
+  if(_pendingUnsub){try{_pendingUnsub();}catch(e){}}
+  _pendingUnsub=FB_DB.collection('users').doc(FB_USER.uid).onSnapshot(function(doc){
+    if(!doc.exists)return;
+    var d=doc.data();
+    if(d.status==='active'){
+      if(_pendingUnsub){try{_pendingUnsub();}catch(e){}_pendingUnsub=null;}
+      var ps2=document.getElementById('pendingScreen');
+      if(ps2)ps2.style.display='none';
+      // 승인 환영 메시지 (현장명 포함)
+      var sitesCount=(d.sites&&d.sites.length)||0;
+      _enterApp(d);
+      setTimeout(function(){
+        toast('🎉 가입 승인 완료! '+sitesCount+'개 현장에 배정되었습니다.','success');
+      },1200);
+    }
+  });
+}
+
 function _enterApp(profileData){
+  // 승인 대기 상태면 대기 화면으로
+  if(profileData.status==='pending'){
+    _showPendingScreen(profileData);
+    return;
+  }
+  // 거절된 사용자
+  if(profileData.status==='rejected'){
+    document.getElementById('LP').style.display='none';
+    document.getElementById('AP').style.display='none';
+    var rs=document.getElementById('rejectedScreen');
+    if(rs)rs.style.display='flex';
+    return;
+  }
   CU_ORG_ID=profileData.orgId;
   CU={id:FB_USER.uid,name:profileData.name,role:profileData.role,
     sites:profileData.sites||['all'],
@@ -218,18 +270,29 @@ function cloudSignup(){
           return res.user.delete().then(function(){throw new Error('잘못된 조직 코드입니다. 관리자에게 확인하세요.');});
         }
         var orgDoc=snap.docs[0];
+        // 신규 가입자는 status:'pending' (관리자 승인 + 현장 배정 대기)
         return FB_DB.collection('users').doc(uid).set({
-          name:name,role:'manager',orgId:orgDoc.id,sites:[],
+          name:name,email:email,role:'manager',orgId:orgDoc.id,sites:[],
+          status:'pending',
           createdAt:firebase.firestore.FieldValue.serverTimestamp()
-        }).then(function(){return orgDoc.data().name;});
+        }).then(function(){
+          // 관리자에게 신규 가입 알림 (인앱)
+          return FB_DB.collection('orgs/'+orgDoc.id+'/notifications').add({
+            type:'newMember',targetRole:'admin',
+            uid:uid,name:name,email:email,
+            read:false,
+            createdAt:firebase.firestore.FieldValue.serverTimestamp()
+          }).then(function(){return orgDoc.data().name;});
+        });
       });
     }else{
+      // 새 조직 생성자는 즉시 admin + active
       setCloudStatus('조직 생성 중...');
       var orgRef=FB_DB.collection('organizations').doc();
       var code=_genOrgCode();
       var batch=FB_DB.batch();
       batch.set(orgRef,{name:orgName||name+'의 조직',orgCode:code,createdAt:firebase.firestore.FieldValue.serverTimestamp()});
-      batch.set(FB_DB.collection('users').doc(uid),{name:name,role:'admin',orgId:orgRef.id,sites:['all'],createdAt:firebase.firestore.FieldValue.serverTimestamp()});
+      batch.set(FB_DB.collection('users').doc(uid),{name:name,email:email,role:'admin',orgId:orgRef.id,sites:['all'],status:'active',createdAt:firebase.firestore.FieldValue.serverTimestamp()});
       profilePromise=batch.commit().then(function(){return orgName||name+'의 조직';});
     }
     profilePromise.then(function(joinedOrgName){
@@ -369,9 +432,40 @@ function startRealtime(){
     });
   });
   _rtUnsubs=[u1,u2];
+
+  // 관리자 전용: 신규 가입 신청 실시간 감지
+  if(CU&&CU.role==='admin'){
+    var u3=FB_DB.collection('users').where('orgId','==',CU_ORG_ID).where('status','==','pending').onSnapshot(function(snap){
+      updPendingBdg(snap.size);
+      snap.docChanges().forEach(function(ch){
+        if(ch.type==='added'){
+          var u=ch.doc.data();
+          // 첫 로드가 아닌 신규 추가만 토스트
+          if(!_pendingInitDone){return;}
+          toast('🔔 신규 가입 신청: '+u.name,'warning');
+          mascotReact('alert','신규 가입 신청');
+          if(CP==='users')rUsers();
+        }
+      });
+      _pendingInitDone=true;
+    });
+    _rtUnsubs.push(u3);
+  }
 }
 
-function stopRealtime(){_rtUnsubs.forEach(function(fn){try{fn();}catch(e){}});_rtUnsubs=[];}
+var _pendingInitDone=false;
+// 사이드바의 "담당자 배정" 메뉴에 승인 대기 배지
+function updPendingBdg(count){
+  var ne=document.querySelector('.ni[data-p="users"]');
+  if(!ne)return;
+  var bdg=ne.querySelector('.bdg.pendBdg');
+  if(count>0){
+    if(!bdg){bdg=document.createElement('span');bdg.className='bdg pendBdg';bdg.style.background='var(--amber)';ne.appendChild(bdg);}
+    bdg.textContent=count;bdg.style.display='inline';
+  }else if(bdg){bdg.style.display='none';}
+}
+
+function stopRealtime(){_rtUnsubs.forEach(function(fn){try{fn();}catch(e){}});_rtUnsubs=[];_pendingInitDone=false;}
 
 // ===== 공지사항 =====
 var _notices=[];var _noticeReads=[];
