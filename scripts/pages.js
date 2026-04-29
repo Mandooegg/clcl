@@ -5,7 +5,9 @@
 
 // ===== 대시보드 =====
 function rDash(){
-  var d=gDB(),ss=gUS();var tb=0,th=0;
+  var d=gDB();
+  if(typeof _loadedSites!=='undefined'&&typeof loadSiteData==='function'){var _ul=Object.keys(d.sites).filter(function(id){return !_loadedSites.has(id);});if(_ul.length){Promise.all(_ul.slice(0,10).map(loadSiteData)).then(rDash);if(_loadedSites.size===0)return;}}
+  var ss=gUS();var tb=0,th=0;
   ss.forEach(function(s){tb+=s.buildings.length;s.buildings.forEach(function(b){th+=(b.basement+b.floors)*b.units;});});
   var avg=ss.length?Math.round(ss.reduce(function(sum,s){return sum+gProg(s.id);},0)/ss.length):0;
   var als=d.alerts.filter(function(a){return gUS().map(function(s){return s.id;}).indexOf(a.siteId)>=0;});
@@ -126,6 +128,7 @@ function rPT(){
   var d=gDB();popBSel(true);
   var si=document.getElementById('prS')?document.getElementById('prS').value:'';
   var bi=document.getElementById('prB')?document.getElementById('prB').value:'';
+  if(si&&typeof _loadedSites!=='undefined'&&!_loadedSites.has(si)&&typeof loadSiteData==='function'){var ptEl=document.getElementById('PT');if(ptEl)ptEl.innerHTML='<div style="text-align:center;padding:40px;color:var(--t3)">⏳ 현장 데이터 로딩 중...</div>';loadSiteData(si).then(rPT);return;}
   var s=d.sites[si];
   if(!s){document.getElementById('PTW').innerHTML='<p style="color:var(--t3);font-size:11px">현장을 선택하세요</p>';return;}
   var w=document.getElementById('PTW');
@@ -233,7 +236,9 @@ function ulExcel(ev){
 
 // ===== 동 설정 =====
 function rBC(){
-  var d=gDB(),si=document.getElementById('cfS').value,s=d.sites[si];if(!s)return;
+  var d=gDB(),si=document.getElementById('cfS').value;
+  if(si&&typeof _loadedSites!=='undefined'&&!_loadedSites.has(si)&&typeof loadSiteData==='function'){var blEl=document.getElementById('BL');if(blEl)blEl.innerHTML='<div style="text-align:center;padding:40px;color:var(--t3)">⏳ 현장 데이터 로딩 중...</div>';loadSiteData(si).then(rBC);return;}
+  var s=d.sites[si];if(!s)return;
   var header='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;gap:6px;flex-wrap:wrap">'
     +'<span style="font-size:10px;color:var(--t3)">'+s.buildings.length+'개 동 (최대50)</span>'
     +(s.buildings.length>1?'<button class="btn bx bo" onclick="autoLayoutBuildings(\''+esc(si)+'\')" title="모든 동을 그리드로 재배치">⚏ 자동 배치</button>':'')
@@ -405,6 +410,7 @@ function delOrd(){if(!confirm('삭제?'))return;var d=gDB(),id=document.getEleme
 // ===== 공장검수 =====
 function rInsp(){
   var d=gDB(),si=document.getElementById('isS')?document.getElementById('isS').value:'';
+  if(si&&typeof _loadedSites!=='undefined'&&!_loadedSites.has(si)&&typeof loadSiteData==='function'){var ilEl=document.getElementById('IL');if(ilEl)ilEl.innerHTML='<div style="text-align:center;padding:40px;color:var(--t3)">⏳ 현장 데이터 로딩 중...</div>';loadSiteData(si).then(rInsp);return;}
   var its=d.inspections.filter(function(i){return i.siteId===si;});
   var fac=its.filter(function(i){return i.category==='factory';});
   var tst=its.filter(function(i){return i.category==='test';});
