@@ -16,10 +16,52 @@ function rDash(){
   document.getElementById('dashGreet').innerHTML='<div style="display:flex;align-items:center;gap:12px;padding:14px 16px;background:linear-gradient(135deg,rgba(59,130,246,.08),rgba(6,182,212,.06));border:1px solid var(--b1);border-radius:var(--r);margin-bottom:12px">'+catSVG(48,catMood)+'<div><div style="font-size:14px;font-weight:700">'+esc(CU.name)+'님, '+greet+'</div><div style="font-size:11px;color:var(--t2);margin-top:2px">'+(ur>0?'확인할 알림이 '+ur+'건 있어요!':'현장이 순조롭게 진행중이에요 ✨')+'</div></div></div>';
   document.getElementById('DS').innerHTML='<div class="sc blue"><div class="sl">현장</div><div class="sv">'+ss.length+'</div><div class="ss">개</div></div><div class="sc green"><div class="sl">완료율</div><div class="sv">'+avg+'%</div></div><div class="sc amber"><div class="sl">동수</div><div class="sv">'+tb+'</div><div class="ss">'+th.toLocaleString()+'세대</div></div><div class="sc red"><div class="sl">알림</div><div class="sv">'+ur+'</div><div class="ss">미확인</div></div>';
   document.getElementById('SP').innerHTML=ss.map(function(s){var p=gProg(s.id);return '<div style="margin-bottom:12px"><div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="font-size:12px;font-weight:500">'+esc(s.name)+'</span><span style="font-size:12px;color:var(--blue)">'+p+'%</span></div><div class="pb"><div class="pf blue" style="width:'+p+'%"></div></div></div>';}).join('');
-  document.getElementById('RA').innerHTML=als.slice(0,5).map(function(a){return '<div class="ac '+esc(a.type)+'"><div style="font-size:16px">'+(a.type==='urgent'?'🔴':'🔵')+'</div><div style="flex:1"><div style="font-size:12px;font-weight:600">'+esc(a.material)+'</div><div style="font-size:10px;color:var(--t3)">'+esc(a.message)+'</div></div></div>';}).join('')||emptyState('알림이 없어요 🎉');
+  document.getElementById('RA').innerHTML=als.slice(0,5).map(function(a){return '<div class="ac '+esc(a.type)+'"><div style="font-size:16px">'+(a.type==='urgent'?'🔴':'🔵')+'</div><div style="flex:1"><div style="font-size:12px;font-weight:600">'+esc(a.material)+'</div><div style="font-size:10px;color:var(--t3)">'+esc(a.message)+'</div></div></div>';}).join('')||emptyState('알림이 없어요 🎉');  loadWeather(ss);
+
 }
 
-// ===== 현장정보 =====
+// ===== 현장정보 ====// ===== 날씨 위젯 =====
+function loadWeather(ss){
+  var wd=document.getElementById('WD');
+  if(!wd){
+    wd=document.createElement('div');
+    wd.id='WD';wd.style.marginBottom='12px';
+    var dg=document.getElementById('dashGreet');
+    if(!dg)return;
+    dg.insertAdjacentElement('afterend',wd);
+  }
+  var lat=37.5665,lon=126.9780;
+  var cs=ss&&ss[0];
+  if(cs&&cs.info){
+    if(cs.info.lat)lat=parseFloat(cs.info.lat);
+    if(cs.info.lon)lon=parseFloat(cs.info.lon);
+  }
+  wd.innerHTML='<div style="padding:8px 14px;color:var(--t3);font-size:11px">⏳ 날씨 로딩 중...</div>';
+  fetch('https://api.open-meteo.com/v1/forecast?latitude='+lat+'&longitude='+lon+'&current=temperature_2m,relative_humidity_2m,precipitation,weather_code,wind_speed_10m&wind_speed_unit=ms&timezone=Asia%2FSeoul')
+  .then(function(r){return r.json();})
+  .then(function(data){
+    var c=data.current,wc=c.weather_code;
+    var icon=wc===0?'☀️':wc<=2?'🌤️':wc<=3?'☁️':wc<=48?'🌫️':wc<=67?'🌧️':wc<=77?'🌨️':wc<=82?'🌦️':wc<=99?'⛈️':'🌡️';
+    var desc=wc===0?'맑음':wc<=2?'구름 조금':wc<=3?'흐림':wc<=48?'안개':wc<=67?'비':wc<=77?'눈':wc<=82?'소나기':'뇌우';
+    wd.innerHTML='<div style="display:flex;align-items:center;gap:12px;padding:10px 16px;background:var(--bg1);border-radius:8px;border:1px solid var(--b1);margin-bottom:4px">'
+      +'<span style="font-size:28px">'+icon+'</span>'
+      +'<div style="flex:1">'
+        +'<div style="display:flex;align-items:baseline;gap:8px">'
+          +'<span style="font-size:22px;font-weight:700;color:var(--t1)">'+c.temperature_2m+'°C</span>'
+          +'<span style="font-size:12px;color:var(--t2)">'+desc+'</span>'
+        +'</div>'
+        +'<div style="font-size:11px;color:var(--t3);margin-top:2px">'
+          +'💧 '+c.relative_humidity_2m+'%'
+          +(c.precipitation>0?'  🌧 '+c.precipitation+'mm':'')
+          +'  💨 '+c.wind_speed_10m+'m/s'
+        +'</div>'
+      +'</div>'
+      +(cs?'<div style="font-size:10px;color:var(--t3);text-align:right;line-height:1.6">'+esc(cs.name)+'<br>현재 날씨</div>':'')
+    +'</div>';
+  }).catch(function(){wd.innerHTML='';});
+}
+
+=
 function rInfo(){
   var ss=gUS();
   if(CU.role==='admin'&&ss.length>1){
