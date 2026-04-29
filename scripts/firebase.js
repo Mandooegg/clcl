@@ -325,31 +325,64 @@ function cloudResetPw(){
   }).catch(function(e){setCloudStatus(e.message,true);});
 }
 
+var _loadedSites=new Set();
+var _cloudSnapshot={};
+
 // ===== 클라우드 데이터 동기화 =====
 function loadCloudData(){
   if(!FB_DB||!USE_CLOUD||!CU_ORG_ID)return Promise.resolve();
   var op='orgs/'+CU_ORG_ID;var d=gDB();
+  _loadedSites=new Set();_cloudSnapshot={};
   return Promise.all([
     FB_DB.collection(op+'/sites').get(),
-    FB_DB.collection(op+'/buildings').get(),
-    FB_DB.collection(op+'/progress').get(),
+    FB_DB.collection('users').where('orgId','==',CU_ORG_ID).get(),
     FB_DB.collection(op+'/procRules').get(),
-    FB_DB.collection(op+'/procOrders').get(),
-    FB_DB.collection(op+'/alerts').get(),
-    FB_DB.collection(op+'/inspections').get(),
-    FB_DB.collection(op+'/editHistory').orderBy('createdAt','desc').limit(100).get(),
-    FB_DB.collection('users').where('orgId','==',CU_ORG_ID).get()
+    FB_DB.collection(op+'/editHistory').orderBy('createdAt','desc').limit(100).get()
   ]).then(function(rs){
     d.sites={};
-    rs[0].forEach(function(doc){var s=doc.data();d.sites[doc.id]={id:doc.id,name:s.name,info:s.info||{},buildings:[],progress:{}};});
-    rs[1].forEach(function(doc){var b=doc.data();if(d.sites[b.siteId]){d.sites[b.siteId].buildings.push({id:doc.id,number:b.number,name:b.name,type:b.type,basement:b.basement,floors:b.floors,units:b.units,posX:b.posX||0,posZ:b.posZ||0,rot:b.rot||0});}});
-    rs[2].forEach(function(doc){var p=doc.data();if(d.sites[p.siteId]){if(!d.sites[p.siteId].progress[p.buildingId])d.sites[p.siteId].progress[p.buildingId]={};if(!d.sites[p.siteId].progress[p.buildingId][p.floorKey])d.sites[p.siteId].progress[p.buildingId][p.floorKey]={};d.sites[p.siteId].progress[p.buildingId][p.floorKey][p.unit]=p.status;}});
-    d.procRules=[];rs[3].forEach(function(doc){var r=doc.data();d.procRules.push({id:doc.id,siteId:r.siteId,material:r.material,condFloor:r.condFloor,lead:r.lead,target:r.target,active:r.active});});
-    d.procOrders=[];rs[4].forEach(function(doc){var o=doc.data();d.procOrders.push({id:doc.id,siteId:o.siteId,material:o.material,orderDate:o.orderDate,status:o.status,manager:o.manager,note:o.note||''});});
-    d.alerts=[];rs[5].forEach(function(doc){var a=doc.data();d.alerts.push({id:doc.id,siteId:a.siteId,ruleId:a.ruleId,material:a.material,message:a.message,type:a.type,date:a.date,read:a.read||false});});
-    d.inspections=[];rs[6].forEach(function(doc){var i=doc.data();d.inspections.push({id:doc.id,siteId:i.siteId,name:i.name,category:i.category,target:i.target,vendor:i.vendor,date:i.date,status:i.status,manager:i.manager,location:i.location,note:i.note||''});});
-    d.editHistory=[];rs[7].forEach(function(doc){var h=doc.data();d.editHistory.push({time:h.time,user:h.userName,action:h.action,detail:h.detail});});
-    d.users=[];rs[8].forEach(function(doc){var u=doc.data();d.users.push({id:doc.id,name:u.name,email:u.email||'',role:u.role,sites:u.sites||[],status:u.status});});
+    rs[0].forEach(function(doc){var s=doc.data();d.sites[doc.id]={id:doc.id,name:s.name,info:s.info||{},buildings:[],progress:{}};_cloudSnapshot['sites/'+doc.id]=JSON.stringify({name:s.name,info:s.info||{}});});
+    d.users=[];rs[1].forEach(function(doc){var u=doc.data();d.users.push({id:doc.id,name:u.name,email:u.email||'',role:u.role,sites:u.sites||[],status:u.status});});
+    d.procRules=[];rs[2].forEach(function(doc){var r=doc.data();d.procRules.push({id:doc.id,siteId:r.siteId,material:r.material,condFloor:r.condFloor,lead:r.lead,target:r.target,active:r.active});_cloudSnapshot['procRules/'+doc.id]=JSON.stringify({siteId:r.siteId,material:r.material,condFloor:r.condFloor,lead:r.lead,target:r.target,active:r.active});});
+    d.editHistory=[];rs[3].forEach(function(doc){var h=doc.data();d.editHistory.push({time:h.time,user:h.userName,action:h.action,detail:h.detail});});
+    d.procOrders=d.procOrders||[];d.alerts=d.alerts||[];d.inspections=d.inspections||[];
+    _memDB=d;try{localStorage.setItem(DK,JSON.stringify(d));}catch(e){}
+    var firstSite=CU&&CU.curSite&&CU.curSite!=='all'?CU.curSite:(Object.keys(d.sites)[0]||null);
+    var toLoad=[];
+    if(CU&&CU.role!=='admin'&&CU.sites&&CU.sites[0]!=='all'){
+      toLoad=CU.sites.filter(function(id){return !!d.sites[id];});
+    } else if(firstSite){
+      toLoad=[firstSite];
+    }
+    return Promise.all(toLoad.map(function(id){return loadSiteData(id);}));
+  });
+}
+
+function loadSiteData(siteId){
+  if(!FB_DB||!USE_CLOUD||!CU_ORG_ID||!siteId)return Promise.resolve();
+  if(_loadedSites.has(siteId))return Promise.resolve();
+  var op='orgs/'+CU_ORG_ID;var d=gDB();
+  return Promise.all([
+    FB_DB.collection(op+'/buildings').where('siteId','==',siteId).get(),
+    FB_DB.collection(op+'/progress').where('siteId','==',siteId).get(),
+    FB_DB.collection(op+'/procOrders').where('siteId','==',siteId).get(),
+    FB_DB.collection(op+'/alerts').where('siteId','==',siteId).get(),
+    FB_DB.collection(op+'/inspections').where('siteId','==',siteId).get()
+  ]).then(function(rs){
+    if(!d.sites[siteId])return;
+    d.sites[siteId].buildings=[];
+    rs[0].forEach(function(doc){var b=doc.data();d.sites[siteId].buildings.push({id:doc.id,number:b.number,name:b.name,type:b.type,basement:b.basement,floors:b.floors,units:b.units,posX:b.posX||0,posZ:b.posZ||0,rot:b.rot||0});_cloudSnapshot['buildings/'+doc.id]=JSON.stringify({siteId:siteId,number:b.number,name:b.name,type:b.type,basement:b.basement,floors:b.floors,units:b.units,posX:b.posX||0,posZ:b.posZ||0,rot:b.rot||0});});
+    d.sites[siteId].progress={};
+    rs[1].forEach(function(doc){var p=doc.data();if(!d.sites[siteId].progress[p.buildingId])d.sites[siteId].progress[p.buildingId]={};if(!d.sites[siteId].progress[p.buildingId][p.floorKey])d.sites[siteId].progress[p.buildingId][p.floorKey]={};d.sites[siteId].progress[p.buildingId][p.floorKey][p.unit]=p.status;_cloudSnapshot['progress/'+doc.id]=JSON.stringify({siteId:siteId,buildingId:p.buildingId,floorKey:p.floorKey,unit:p.unit,status:p.status});});
+    var oO=d.procOrders.filter(function(o){return o.siteId!==siteId;});var nO=[];
+    rs[2].forEach(function(doc){var o=doc.data();nO.push({id:doc.id,siteId:o.siteId,material:o.material,orderDate:o.orderDate,status:o.status,manager:o.manager,note:o.note||''});_cloudSnapshot['procOrders/'+doc.id]=JSON.stringify({siteId:o.siteId,material:o.material,orderDate:o.orderDate,status:o.status,manager:o.manager,note:o.note||''});});
+    d.procOrders=oO.concat(nO);
+    var oA=d.alerts.filter(function(a){return a.siteId!==siteId;});var nA=[];
+    rs[3].forEach(function(doc){var a=doc.data();nA.push({id:doc.id,siteId:a.siteId,ruleId:a.ruleId,material:a.material,message:a.message,type:a.type,date:a.date,read:a.read||false});_cloudSnapshot['alerts/'+doc.id]=JSON.stringify({siteId:a.siteId,ruleId:a.ruleId||'',material:a.material,message:a.message,type:a.type,date:a.date,read:a.read||false});});
+    d.alerts=oA.concat(nA);
+    var oI=d.inspections.filter(function(i){return i.siteId!==siteId;});var nI=[];
+    rs[4].forEach(function(doc){var i=doc.data();nI.push({id:doc.id,siteId:i.siteId,name:i.name,category:i.category,target:i.target,vendor:i.vendor,date:i.date,status:i.status,manager:i.manager,location:i.location,note:i.note||''});_cloudSnapshot['inspections/'+doc.id]=JSON.stringify({siteId:i.siteId,name:i.name,category:i.category,target:i.target||'',vendor:i.vendor||'',date:i.date||'',status:i.status,manager:i.manager||'',location:i.location||'',note:i.note||''});});
+    d.inspections=oI.concat(nI);
+    _loadedSites.add(siteId);
     _memDB=d;try{localStorage.setItem(DK,JSON.stringify(d));}catch(e){}
   });
 }
@@ -369,40 +402,24 @@ window.addEventListener('beforeunload',function(){
 
 var _saveErrorShown=false;
 function _doCloudSave(){
-  // ⚠️ v2.3: 전체 덤프 방식. v3에서 diff-based로 교체 예정
-  if(!FB_DB||!USE_CLOUD||!CU_ORG_ID){console.warn('[saveToCloud] skipped — missing context');return;}
-  var d=gDB();var op='orgs/'+CU_ORG_ID;
-  var promises=[];
-  function err(label){return function(e){
-    console.error('[saveToCloud] '+label+' failed:',e.code,e.message);
-    if(!_saveErrorShown){
-      _saveErrorShown=true;
-      try{toast('⚠️ 클라우드 저장 실패: '+e.message,'error');}catch(_){}
-      setTimeout(function(){_saveErrorShown=false;},5000);
-    }
-    throw e;
-  };}
+  // v3: diff 기반 저장 — 변경된 문서만 write
+  if(!FB_DB||!USE_CLOUD||!CU_ORG_ID){console.warn('[saveToCloud] skipped');return;}
+  var d=gDB();var op='orgs/'+CU_ORG_ID;var promises=[];
+  function err(lbl){return function(e){console.error('[saveToCloud] '+lbl+':',e.message);if(!_saveErrorShown){_saveErrorShown=true;try{toast('⚠️ 클라우드 저장 실패: '+e.message,'error');}catch(_){}setTimeout(function(){_saveErrorShown=false;},5000);}};}
+  function chk(key,data){var s=JSON.stringify(data);if(_cloudSnapshot[key]===s)return false;_cloudSnapshot[key]=s;return true;}
   for(var si in d.sites){(function(s){
-    promises.push(FB_DB.collection(op+'/sites').doc(s.id).set({name:s.name,info:s.info},{merge:true}).catch(err('sites/'+s.id)));
-    s.buildings.forEach(function(b){var sid=s.id;
-      promises.push(FB_DB.collection(op+'/buildings').doc(b.id).set({siteId:sid,number:b.number,name:b.name,type:b.type,basement:b.basement,floors:b.floors,units:b.units,posX:b.posX||0,posZ:b.posZ||0,rot:b.rot||0},{merge:true}).catch(err('buildings/'+b.id)));
-    });
-    for(var bi in s.progress)for(var fk in s.progress[bi])for(var u in s.progress[bi][fk]){
-      var docId=bi+'__'+fk+'__'+u;
-      promises.push(FB_DB.collection(op+'/progress').doc(docId).set({siteId:s.id,buildingId:bi,floorKey:fk,unit:u,status:s.progress[bi][fk][u]},{merge:true}).catch(err('progress/'+docId)));
-    }
+    if(chk('sites/'+s.id,{name:s.name,info:s.info}))promises.push(FB_DB.collection(op+'/sites').doc(s.id).set({name:s.name,info:s.info},{merge:true}).catch(err('sites/'+s.id)));
+    if(!_loadedSites.has(s.id))return;
+    s.buildings.forEach(function(b){var bd={siteId:s.id,number:b.number,name:b.name,type:b.type,basement:b.basement,floors:b.floors,units:b.units,posX:b.posX||0,posZ:b.posZ||0,rot:b.rot||0};if(chk('buildings/'+b.id,bd))promises.push(FB_DB.collection(op+'/buildings').doc(b.id).set(bd,{merge:true}).catch(err('buildings/'+b.id)));});
+    for(var bi in s.progress)for(var fk in s.progress[bi])for(var u in s.progress[bi][fk]){var docId=bi+'__'+fk+'__'+u;var pd={siteId:s.id,buildingId:bi,floorKey:fk,unit:u,status:s.progress[bi][fk][u]};if(chk('progress/'+docId,pd))promises.push(FB_DB.collection(op+'/progress').doc(docId).set(pd,{merge:true}).catch(err('progress/'+docId)));}
   }(d.sites[si]));}
-  d.procRules.forEach(function(r){promises.push(FB_DB.collection(op+'/procRules').doc(r.id).set({siteId:r.siteId,material:r.material,condFloor:r.condFloor,lead:r.lead,target:r.target,active:r.active},{merge:true}).catch(err('procRules/'+r.id)));});
-  d.procOrders.forEach(function(o){promises.push(FB_DB.collection(op+'/procOrders').doc(o.id).set({siteId:o.siteId,material:o.material,orderDate:o.orderDate,status:o.status,manager:o.manager,note:o.note||''},{merge:true}).catch(err('procOrders/'+o.id)));});
-  d.alerts.forEach(function(a){promises.push(FB_DB.collection(op+'/alerts').doc(a.id).set({siteId:a.siteId,ruleId:a.ruleId||'',material:a.material,message:a.message,type:a.type,date:a.date,read:a.read||false},{merge:true}).catch(err('alerts/'+a.id)));});
-  d.inspections.forEach(function(i){promises.push(FB_DB.collection(op+'/inspections').doc(i.id).set({siteId:i.siteId,name:i.name,category:i.category,target:i.target||'',vendor:i.vendor||'',date:i.date||'',status:i.status,manager:i.manager||'',location:i.location||'',note:i.note||''},{merge:true}).catch(err('inspections/'+i.id)));});
-  if(d.editHistory&&d.editHistory.length){var h=d.editHistory[0];
-    promises.push(FB_DB.collection(op+'/editHistory').add({time:h.time,userName:h.user,action:h.action,detail:h.detail,createdAt:firebase.firestore.FieldValue.serverTimestamp()}).catch(err('editHistory')));}
-  Promise.allSettled(promises).then(function(results){
-    var failed=results.filter(function(r){return r.status==='rejected';}).length;
-    if(failed===0){console.log('[saveToCloud] ✓ '+results.length+' docs saved');}
-    else{console.warn('[saveToCloud] '+failed+'/'+results.length+' failed');}
-  });
+  d.procRules.forEach(function(r){var rd={siteId:r.siteId,material:r.material,condFloor:r.condFloor,lead:r.lead,target:r.target,active:r.active};if(chk('procRules/'+r.id,rd))promises.push(FB_DB.collection(op+'/procRules').doc(r.id).set(rd,{merge:true}).catch(err('procRules/'+r.id)));});
+  d.procOrders.forEach(function(o){var od={siteId:o.siteId,material:o.material,orderDate:o.orderDate,status:o.status,manager:o.manager,note:o.note||''};if(chk('procOrders/'+o.id,od))promises.push(FB_DB.collection(op+'/procOrders').doc(o.id).set(od,{merge:true}).catch(err('procOrders/'+o.id)));});
+  d.alerts.forEach(function(a){var ad={siteId:a.siteId,ruleId:a.ruleId||'',material:a.material,message:a.message,type:a.type,date:a.date,read:a.read||false};if(chk('alerts/'+a.id,ad))promises.push(FB_DB.collection(op+'/alerts').doc(a.id).set(ad,{merge:true}).catch(err('alerts/'+a.id)));});
+  d.inspections.forEach(function(i){var id2={siteId:i.siteId,name:i.name,category:i.category,target:i.target||'',vendor:i.vendor||'',date:i.date||'',status:i.status,manager:i.manager||'',location:i.location||'',note:i.note||''};if(chk('inspections/'+i.id,id2))promises.push(FB_DB.collection(op+'/inspections').doc(i.id).set(id2,{merge:true}).catch(err('inspections/'+i.id)));});
+  if(d.editHistory&&d.editHistory.length){var h=d.editHistory[0];var hk='hist/_'+h.time+'_'+h.action;if(chk(hk,{t:h.time,u:h.user,a:h.action}))promises.push(FB_DB.collection(op+'/editHistory').add({time:h.time,userName:h.user,action:h.action,detail:h.detail,createdAt:firebase.firestore.FieldValue.serverTimestamp()}).catch(err('editHistory')));}
+  if(!promises.length){console.log('[saveToCloud] ✓ no changes');return;}
+  Promise.allSettled(promises).then(function(res){var f=res.filter(function(r){return r.status==='rejected';}).length;console.log(f?'[saveToCloud] '+f+'/'+res.length+' failed':'[saveToCloud] ✓ '+res.length+' docs saved (diff)');});
 }
 
 // ===== 사용자 상태 저장/복원 =====
