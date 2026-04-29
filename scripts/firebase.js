@@ -224,6 +224,12 @@ function _enterApp(profileData){
       },800);
       resetIdleTimer();
     });
+  }).catch(function(e){
+    console.error('[enterApp] 데이터 로드 실패:',e);
+    toast('데이터 로드 실패: '+e.message+'. 앱 재시작을 권장합니다.','error');
+    document.getElementById('LP').style.display='none';
+    document.getElementById('AP').style.display='block';
+    setup();
   });
 }
 
@@ -331,7 +337,8 @@ function loadCloudData(){
     FB_DB.collection(op+'/procOrders').get(),
     FB_DB.collection(op+'/alerts').get(),
     FB_DB.collection(op+'/inspections').get(),
-    FB_DB.collection(op+'/editHistory').orderBy('createdAt','desc').limit(100).get()
+    FB_DB.collection(op+'/editHistory').orderBy('createdAt','desc').limit(100).get(),
+    FB_DB.collection('users').where('orgId','==',CU_ORG_ID).get()
   ]).then(function(rs){
     d.sites={};
     rs[0].forEach(function(doc){var s=doc.data();d.sites[doc.id]={id:doc.id,name:s.name,info:s.info||{},buildings:[],progress:{}};});
@@ -342,6 +349,7 @@ function loadCloudData(){
     d.alerts=[];rs[5].forEach(function(doc){var a=doc.data();d.alerts.push({id:doc.id,siteId:a.siteId,ruleId:a.ruleId,material:a.material,message:a.message,type:a.type,date:a.date,read:a.read||false});});
     d.inspections=[];rs[6].forEach(function(doc){var i=doc.data();d.inspections.push({id:doc.id,siteId:i.siteId,name:i.name,category:i.category,target:i.target,vendor:i.vendor,date:i.date,status:i.status,manager:i.manager,location:i.location,note:i.note||''});});
     d.editHistory=[];rs[7].forEach(function(doc){var h=doc.data();d.editHistory.push({time:h.time,user:h.userName,action:h.action,detail:h.detail});});
+    d.users=[];rs[8].forEach(function(doc){var u=doc.data();d.users.push({id:doc.id,name:u.name,email:u.email||'',role:u.role,sites:u.sites||[],status:u.status});});
     _memDB=d;try{localStorage.setItem(DK,JSON.stringify(d));}catch(e){}
   });
 }
